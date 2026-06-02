@@ -13,6 +13,8 @@ const black = "#000000", white = "#ffffff";
 const text = ink50, sec = ink400, ter = ink600;
 const hyper = "#7733aa";
 const BOTTOM_GRAD = "linear-gradient(0deg, rgba(12,15,19,0.9) 0%, rgba(12,15,19,0.888) 8.1%, rgba(12,15,19,0.856) 15.5%, rgba(12,15,19,0.806) 22.5%, rgba(12,15,19,0.743) 29%, rgba(12,15,19,0.667) 35.3%, rgba(12,15,19,0.583) 41.2%, rgba(12,15,19,0.495) 47.1%, rgba(12,15,19,0.405) 52.9%, rgba(12,15,19,0.317) 58.8%, rgba(12,15,19,0.233) 64.7%, rgba(12,15,19,0.158) 70.1%, rgba(12,15,19,0.094) 76.5%, rgba(12,15,19,0.044) 84.5%, rgba(12,15,19,0.012) 91.9%, rgba(12,15,19,0) 100%)";
+// smooth eased fade from the image into the dark sheet (top → bottom)
+const HEADER_GRAD = "linear-gradient(180deg, rgba(12,15,19,0) 0%, rgba(12,15,19,0.008) 26%, rgba(12,15,19,0.03) 38%, rgba(12,15,19,0.07) 47%, rgba(12,15,19,0.13) 55%, rgba(12,15,19,0.21) 62%, rgba(12,15,19,0.31) 69%, rgba(12,15,19,0.43) 76%, rgba(12,15,19,0.56) 82%, rgba(12,15,19,0.69) 88%, rgba(12,15,19,0.81) 93%, rgba(12,15,19,0.92) 97%, rgba(12,15,19,1) 100%)";
 const BR = { blue: "#3D8EF0", green: "#00cd61", gold: "#efb768", red: "#f32b44" };
 const STATUS = {
   Scheduled: { bg: BR.blue, fg: ink50 },
@@ -177,7 +179,7 @@ function TopNav() {
   return (
     <div style={{ position: "absolute", top: 58, left: 0, right: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
       <Pressable style={circleBtn}><Ico paths={I.menu} size={20} color={ink50} /></Pressable>
-      <Pressable style={{ background: black, borderRadius: 22, padding: "9px 15px", display: "flex", alignItems: "center", gap: 7 }}>
+      <Pressable style={{ background: black, borderRadius: 22, padding: "9px 11px 9px 15px", display: "flex", alignItems: "center", gap: 6 }}>
         <Ico paths={I.cloud} size={16} color={ink200} />
         <span style={{ color: ink50, fontSize: 14, fontWeight: 600 }}>31.2°C</span>
         <Ico paths={I.chevR} size={13} color={ink400} />
@@ -519,10 +521,10 @@ function FarmSheet({ z, show, onExited, onPop, onAction, onPlan }) {
               <span style={{ color: text, fontSize: 27, fontWeight: 600, letterSpacing: -0.6 }}>Valin Farm</span>
               <Ico paths={I.chevD} size={20} color={sec} />
             </div>
-            <div style={{ background: inkUp, borderRadius: 22, padding: "8px 15px", display: "flex", alignItems: "center", gap: 4 }}>
+            <Pressable style={{ background: inkUp, borderRadius: 22, padding: "8px 11px 8px 16px", display: "flex", alignItems: "center", gap: 3 }}>
               <span style={{ color: text, fontSize: 14, fontWeight: 500, lineHeight: 1 }}>Field</span>
               <Ico paths={I.chevR} size={13} color={sec} />
-            </div>
+            </Pressable>
           </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", paddingBottom: 110 }}>
@@ -567,7 +569,7 @@ function PlanHeader({ plan, onBack, compact }) {
     <div style={{ flexShrink: 0, position: "relative" }}>
       <div style={{ height: compact ? 132 : 196, background: ink900, position: "relative", overflow: "hidden" }}>
         <img src={plan.img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 30%, rgba(12,15,19,0.5) 70%, " + ink + ")" }} />
+        <div style={{ position: "absolute", inset: 0, background: HEADER_GRAD }} />
         <Pressable onClick={onBack} style={{ position: "absolute", top: 30, left: 14, cursor: "pointer", zIndex: 10 }}>
           <Ico paths={I.chevL} size={24} color={ink50} />
         </Pressable>
