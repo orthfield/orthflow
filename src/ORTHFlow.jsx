@@ -616,9 +616,11 @@ function PlanDetail({ z, show, onExited, plan, onPop, onAction }) {
       <TopNav />
       <Sheet show={show} onExited={onExited} onDismiss={onPop} top={128} background={ink} grabber="light">
         <PlanHeader plan={plan} onBack={onPop} />
-        <div style={{ display: "flex", gap: 10, padding: "20px 16px 16px", overflowX: "auto" }}>
-          {[64, 96, 110, 80].map((w, i) => (
-            <div key={i} style={{ height: 34, width: w, flexShrink: 0, borderRadius: 999, background: i === 0 ? inkUp : black }} />
+        <div style={{ display: "flex", gap: 10, padding: "20px 16px 16px" }}>
+          {["Sort", "", "", ""].map((label, i) => (
+            <Pressable key={i} style={{ flex: 1, height: 34, borderRadius: 999, background: black, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {label && <span style={{ color: sec, fontSize: 13.5, fontWeight: 500 }}>{label}</span>}
+            </Pressable>
           ))}
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 110px" }}>
