@@ -371,8 +371,8 @@ function FileCard({ label, count, img, add }) {
       <img src={img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.55) 100%)" }} />
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 15 }}>
-        <span style={{ color: "rgba(255,255,255,0.92)", fontSize: 14, fontWeight: 600 }}>{label}</span>
-        <span style={{ color: "rgba(255,255,255,0.9)", fontSize: 28, fontWeight: 600, lineHeight: 1 }}>{count}</span>
+        <span style={{ color: ink50, fontSize: 14, fontWeight: 600 }}>{label}</span>
+        <span style={{ color: ink50, fontSize: 28, fontWeight: 600, lineHeight: 1 }}>{count}</span>
       </div>
     </div>
   );
@@ -400,8 +400,8 @@ function PlotRow({ p }) {
         <Ico paths={I.chevR} size={18} color={ter} />
       </div>
       <div style={{ marginTop: 14, paddingBottom: 13, display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ flex: 1, height: 4, borderRadius: 3, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
-          <div style={{ width: `${p.progress}%`, height: "100%", borderRadius: 3, background: p.locked ? "rgba(255,255,255,0.4)" : hyper }} />
+        <div style={{ flex: 1, height: 4, borderRadius: 3, background: inkUp, overflow: "hidden" }}>
+          <div style={{ width: `${p.progress}%`, height: "100%", borderRadius: 3, background: p.locked ? ink500 : hyper }} />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
           <Ico paths={p.locked ? I.label : I.labelSolid} size={13} color={p.locked ? sec : hyper} />

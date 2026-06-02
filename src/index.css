@@ -11,6 +11,8 @@ html, body {
   height: 100%;
 }
 
+::placeholder { color: #757a7f; opacity: 1; }
+
 @keyframes orthIn  { from { transform: translateY(100%) } to { transform: translateY(0) } }
 @keyframes orthOut { from { transform: translateY(0) } to { transform: translateY(100%) } }
 @keyframes orthRise { from { transform: translateY(16px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
