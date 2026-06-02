@@ -14,7 +14,7 @@ const text = ink50, sec = ink400, ter = ink600;
 const hyper = "#7733aa";
 const BOTTOM_GRAD = "linear-gradient(0deg, rgba(12,15,19,0.9) 0%, rgba(12,15,19,0.888) 8.1%, rgba(12,15,19,0.856) 15.5%, rgba(12,15,19,0.806) 22.5%, rgba(12,15,19,0.743) 29%, rgba(12,15,19,0.667) 35.3%, rgba(12,15,19,0.583) 41.2%, rgba(12,15,19,0.495) 47.1%, rgba(12,15,19,0.405) 52.9%, rgba(12,15,19,0.317) 58.8%, rgba(12,15,19,0.233) 64.7%, rgba(12,15,19,0.158) 70.1%, rgba(12,15,19,0.094) 76.5%, rgba(12,15,19,0.044) 84.5%, rgba(12,15,19,0.012) 91.9%, rgba(12,15,19,0) 100%)";
 // smooth eased fade from the image into the dark sheet (top → bottom)
-const HEADER_GRAD = "linear-gradient(180deg, rgba(12,15,19,0) 0%, rgba(12,15,19,0.2) 20%, rgba(12,15,19,0.4) 40%, rgba(12,15,19,0.6) 60%, rgba(12,15,19,0.8) 80%, rgba(12,15,19,1) 100%)";
+const HEADER_GRAD = "linear-gradient(180deg, rgba(12,15,19,0) 0%, rgba(12,15,19,0.18) 22%, rgba(12,15,19,0.4) 45%, rgba(12,15,19,0.66) 66%, rgba(12,15,19,0.9) 82%, rgba(12,15,19,1) 92%, rgba(12,15,19,1) 100%)";
 const BR = { blue: "#3D8EF0", green: "#00cd61", gold: "#efb768", red: "#f32b44" };
 const STATUS = {
   Scheduled: { bg: BR.blue, fg: ink50 },
