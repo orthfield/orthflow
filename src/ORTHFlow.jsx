@@ -601,23 +601,23 @@ function PlanListCard({ a, onClick }) {
     </Pressable>
   );
 }
-function PlanDetail({ z, show, onExited, plan, onPop, onAction, onDragDismiss }) {
+function PlanDetail({ z, show, onExited, plan, onPop, onAction }) {
   const acts = ACTIONS.filter(a => a.plot === plan.plot);
   const list = acts.length ? acts : ACTIONS.slice(0, 3);
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: z }}>
       <Pressable noHaptic onClick={onPop} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 128, zIndex: 5, cursor: "pointer" }} />
       <TopNav />
-      <Sheet show={show} onExited={onExited} onDismiss={onDragDismiss} top={128} background={ink} grabber="light">
+      <Sheet show={show} onExited={onExited} onDismiss={onPop} top={128} background={ink} grabber="light">
         <PlanHeader plan={plan} onBack={onPop} />
-        <div style={{ display: "flex", gap: 10, padding: "20px 16px 16px" }}>
-          {["", "", "", ""].map((label, i) => (
-            <Pressable key={i} style={{ flex: 1, height: 34, borderRadius: 999, background: black, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {label && <span style={{ color: sec, fontSize: 13.5, fontWeight: 500 }}>{label}</span>}
-            </Pressable>
-          ))}
-        </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 110px" }}>
+          <div style={{ display: "flex", gap: 10, padding: "20px 0 16px" }}>
+            {["", "", "", ""].map((label, i) => (
+              <Pressable key={i} style={{ flex: 1, height: 34, borderRadius: 999, background: black, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {label && <span style={{ color: sec, fontSize: 13.5, fontWeight: 500 }}>{label}</span>}
+              </Pressable>
+            ))}
+          </div>
           {list.map((a, i) => <PlanListCard key={i} a={a} onClick={() => onAction(a)} />)}
         </div>
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "90px 16px 24px", background: BOTTOM_GRAD }}>
@@ -689,12 +689,8 @@ export default function App() {
   const [coach, setCoach] = useState(true);
 
   const push = name => setSheets(s => [...s, name]);
-  const pop = () => { if (sheets.length) setExiting("top"); };       // back one level
-  const popAll = () => { if (sheets.length) setExiting("all"); };    // drag whole stack down to the map
-  const onExited = i => {
-    if (exiting === "all") { if (i === 0) { setSheets([]); setExiting(false); } }  // wait for the bottom sheet
-    else { setSheets(s => s.slice(0, -1)); setExiting(false); }
-  };
+  const pop = () => { if (sheets.length) setExiting(true); };        // back one level
+  const onExited = () => { setSheets(s => s.slice(0, -1)); setExiting(false); };
 
   const openFarm = () => push("farm");
   const openPlan = p => { setSelPlan(p); push("plan"); };
@@ -716,11 +712,11 @@ export default function App() {
         <HomeMap onExpand={openFarm} coach={coach} onCloseCoach={() => setCoach(false)} />
       </div>
       {sheets.map((name, i) => {
-        const show = exiting === "all" ? false : !(exiting === "top" && i === topIdx);
+        const show = !(exiting && i === topIdx);
         const z = 10 + i * 10;
-        const shared = { key: name + i, z, show, onExited: () => onExited(i), onPop: pop };
+        const shared = { key: name + i, z, show, onExited, onPop: pop };
         if (name === "farm") return <FarmSheet {...shared} onAction={openActionFromFarm} onPlan={openPlan} />;
-        if (name === "plan") return <PlanDetail {...shared} plan={selPlan} onAction={openActionFromPlan} onDragDismiss={popAll} />;
+        if (name === "plan") return <PlanDetail {...shared} plan={selPlan} onAction={openActionFromPlan} />;
         if (name === "action") return <ActionDetail {...shared} plan={selPlan} action={selAction} onResolve={pop} />;
         return null;
       })}
