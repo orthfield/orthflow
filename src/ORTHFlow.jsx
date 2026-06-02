@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Menu, Bell, Cloud, NavArrowRight, NavArrowLeft, NavArrowDown, Plus,
   Attachment, Microphone, EditPencil, ArrowUpRight, Check, Xmark, Expand,
@@ -82,18 +82,108 @@ function Frame({ children }) {
   );
 }
 const circleBtn = { width: 40, height: 40, borderRadius: "50%", background: black, display: "flex", alignItems: "center", justifyContent: "center" };
-const sheetAnim = a => a === "in" ? "orthIn .33s cubic-bezier(.22,1,.36,1) both" : a === "out" ? "orthOut .28s cubic-bezier(.4,0,.7,1) both" : undefined;
+
+/* ===================== iOS interaction primitives ===================== */
+const SPRING = "cubic-bezier(0.32, 0.72, 0, 1)";   // iOS sheet-present curve
+
+// Web haptics: navigator.vibrate (Android) + the iOS 17.4+ <input switch> tap.
+function ensureHaptic() {
+  if (typeof document === "undefined" || window.__orthHaptic) return;
+  const label = document.createElement("label");
+  label.setAttribute("aria-hidden", "true");
+  label.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.setAttribute("switch", "");
+  label.appendChild(input);
+  document.body.appendChild(label);
+  window.__orthHaptic = label;
+}
+function haptic(ms = 7) {
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+  try { ensureHaptic(); window.__orthHaptic && window.__orthHaptic.click(); } catch (e) {}
+}
+
+// Press feedback: scales + dims under the finger, springs back. Fires a haptic on tap.
+function Pressable({ onClick, scale = 0.965, disabled, style, children, stop, noHaptic, ...rest }) {
+  const [down, setDown] = useState(false);
+  if (disabled) return <div style={style} {...rest}>{children}</div>;
+  return (
+    <div
+      onPointerDown={() => setDown(true)}
+      onPointerUp={() => setDown(false)}
+      onPointerCancel={() => setDown(false)}
+      onPointerLeave={() => setDown(false)}
+      onClick={e => { if (stop) e.stopPropagation(); if (!noHaptic) haptic(); onClick && onClick(e); }}
+      style={{ ...style, transform: `${style && style.transform ? style.transform + " " : ""}scale(${down ? scale : 1})`, opacity: down ? 0.88 : 1, transition: `transform .22s ${SPRING}, opacity .22s ${SPRING}`, WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+      {...rest}
+    >
+      {children}
+    </div>
+  );
+}
+
+// Bottom sheet: springs up on mount, down on exit, drag-the-handle to dismiss.
+function Sheet({ top = 128, background = ink, radius = 30, zIndex = 20, show = true, onExited, onDismiss, grabber = "solid", children }) {
+  const drag = useRef({ active: false, startY: 0, dy: 0, t0: 0, pid: null });
+  const [t, setT] = useState("translateY(100%)");
+  const [spring, setSpring] = useState(false);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => { setSpring(true); setT("translateY(0px)"); });
+    return () => cancelAnimationFrame(id);
+  }, []);
+  useEffect(() => { if (!show) { setSpring(true); setT("translateY(100%)"); } }, [show]);
+
+  const onEnd = e => { if (e.target === e.currentTarget && e.propertyName === "transform" && !show) onExited && onExited(); };
+
+  const start = e => {
+    drag.current = { active: true, startY: e.clientY, dy: 0, t0: Date.now(), pid: e.pointerId };
+    setSpring(false);
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (x) {}
+  };
+  const move = e => {
+    if (!drag.current.active) return;
+    const dy = Math.max(0, e.clientY - drag.current.startY);
+    drag.current.dy = dy;
+    setT(`translateY(${dy}px)`);
+  };
+  const end = () => {
+    if (!drag.current.active) return;
+    const { dy, t0 } = drag.current;
+    const v = dy / Math.max(Date.now() - t0, 1);
+    drag.current.active = false;
+    setSpring(true);
+    if (dy > 110 || v > 0.55) { haptic(12); onDismiss && onDismiss(); }
+    else setT("translateY(0px)");
+  };
+
+  const grabEl = (
+    <div onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end}
+      style={{ position: "absolute", top: 0, left: 0, right: 0, height: 30, zIndex: 9, display: "flex", justifyContent: "center", paddingTop: 12, cursor: "grab", touchAction: "none" }}>
+      <div style={{ width: 38, height: 5, borderRadius: 3, background: grabber === "light" ? ink400 : ink700 }} />
+    </div>
+  );
+
+  return (
+    <div onTransitionEnd={onEnd}
+      style={{ position: "absolute", top, left: 0, right: 0, bottom: 0, zIndex, background, borderTopLeftRadius: radius, borderTopRightRadius: radius, overflow: "hidden", display: "flex", flexDirection: "column", transform: t, transition: spring ? `transform .44s ${SPRING}` : "none", willChange: "transform" }}>
+      {grabEl}
+      {children}
+    </div>
+  );
+}
 function TopNav() {
   return (
     <div style={{ position: "absolute", top: 58, left: 0, right: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
-      <div style={circleBtn}><Ico paths={I.menu} size={20} color={ink50} /></div>
-      <div style={{ background: black, borderRadius: 22, padding: "9px 15px", display: "flex", alignItems: "center", gap: 7 }}>
+      <Pressable style={circleBtn}><Ico paths={I.menu} size={20} color={ink50} /></Pressable>
+      <Pressable style={{ background: black, borderRadius: 22, padding: "9px 15px", display: "flex", alignItems: "center", gap: 7 }}>
         <Ico paths={I.cloud} size={16} color={ink200} />
         <span style={{ color: ink50, fontSize: 14, fontWeight: 600 }}>31.2°C</span>
         <Ico paths={I.chevR} size={13} color={ink400} />
-      </div>
+      </Pressable>
       <div style={{ position: "relative" }}>
-        <div style={circleBtn}><Ico paths={I.bell} size={20} color={ink50} /></div>
+        <Pressable style={circleBtn}><Ico paths={I.bell} size={20} color={ink50} /></Pressable>
         <div style={{ position: "absolute", top: -2, right: -2, background: BR.red, borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span style={{ color: white, fontSize: 10, fontWeight: 600 }}>2</span>
         </div>
@@ -103,11 +193,11 @@ function TopNav() {
 }
 function InputBar({ ph, bg = black }) {
   return (
-    <div style={{ background: bg, borderRadius: 999, display: "flex", alignItems: "center", gap: 12, padding: "18px 20px" }}>
+    <Pressable scale={0.99} style={{ background: bg, borderRadius: 999, display: "flex", alignItems: "center", gap: 12, padding: "18px 20px", cursor: "text" }}>
       <Ico paths={I.attachment} size={21} color={sec} />
       <span style={{ flex: 1, color: sec, fontSize: 17 }}>{ph}</span>
       <Ico paths={I.mic} size={21} color={sec} />
-    </div>
+    </Pressable>
   );
 }
 function Dots({ cur, total, onWhite }) {
@@ -161,7 +251,7 @@ function Chips({ options, value, onChange }) {
       {options.map(o => {
         const on = value === o;
         return (
-          <div key={o} onClick={() => onChange(o)} style={{ background: on ? ink50 : ink900, color: on ? ink : ink200, borderRadius: 999, padding: "14px 20px", fontSize: 16, fontWeight: on ? 600 : 500, cursor: "pointer", userSelect: "none" }}>{o}</div>
+          <Pressable key={o} onClick={() => onChange(o)} style={{ background: on ? ink50 : ink900, color: on ? ink : ink200, borderRadius: 999, padding: "14px 20px", fontSize: 16, fontWeight: on ? 600 : 500, cursor: "pointer", userSelect: "none" }}>{o}</Pressable>
         );
       })}
     </div>
@@ -218,13 +308,13 @@ function Onboarding({ step, setStep, answers, setAnswers, onDone }) {
     <>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", padding: "64px 16px 24px", background: ink, zIndex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 40 }}>
-          <div onClick={() => step > 0 && setStep(step - 1)} style={{ width: 52, height: 52, borderRadius: "50%", background: black, display: "flex", alignItems: "center", justifyContent: "center", cursor: step > 0 ? "pointer" : "default", opacity: step > 0 ? 1 : 0.4 }}>
+          <Pressable onClick={() => step > 0 && setStep(step - 1)} disabled={step === 0} style={{ width: 52, height: 52, borderRadius: "50%", background: black, display: "flex", alignItems: "center", justifyContent: "center", cursor: step > 0 ? "pointer" : "default", opacity: step > 0 ? 1 : 0.4, flexShrink: 0 }}>
             <Ico paths={I.chevL} size={24} color={ink50} />
-          </div>
+          </Pressable>
           <div style={{ flex: 1, height: 4, borderRadius: 3, background: inkUp }}>
-            <div style={{ width: `${((step + 1) / STEPS.length) * 100}%`, height: "100%", borderRadius: 3, background: ink50, transition: "width .25s" }} />
+            <div style={{ width: `${((step + 1) / STEPS.length) * 100}%`, height: "100%", borderRadius: 3, background: ink50, transition: `width .35s ${SPRING}` }} />
           </div>
-          <span onClick={onDone} style={{ color: sec, fontSize: 15, fontWeight: 600, cursor: "pointer", userSelect: "none" }}>Skip</span>
+          <Pressable onClick={onDone} style={{ color: sec, fontSize: 15, fontWeight: 600, cursor: "pointer", userSelect: "none" }}>Skip</Pressable>
         </div>
         <p style={{ color: text, fontSize: 27, fontWeight: 600, letterSpacing: -0.6, marginBottom: s.sub ? 8 : 24 }}>{s.title}</p>
         {s.sub && <p style={{ color: sec, fontSize: 16, marginBottom: 24 }}>{s.sub}</p>}
@@ -234,9 +324,9 @@ function Onboarding({ step, setStep, answers, setAnswers, onDone }) {
           {s.kind === "draw" && <DrawPlot points={pts} setPoints={setPts} />}
           {s.kind === "date" && <DatePick value={val} onChange={set} />}
         </div>
-        <div onClick={ready ? next : undefined} style={{ background: ready ? ink50 : inkUp, color: ready ? ink : ter, borderRadius: 999, padding: 20, textAlign: "center", fontSize: 18, fontWeight: 600, cursor: ready ? "pointer" : "default" }}>
+        <Pressable onClick={ready ? next : undefined} disabled={!ready} scale={0.98} style={{ background: ready ? ink50 : inkUp, color: ready ? ink : ter, borderRadius: 999, padding: 20, textAlign: "center", fontSize: 18, fontWeight: 600, cursor: ready ? "pointer" : "default" }}>
           {step === STEPS.length - 1 ? "Open my farm" : "Continue"}
-        </div>
+        </Pressable>
         <div style={{ height: "env(safe-area-inset-bottom, 0px)", flexShrink: 0 }} />
       </div>
     </>
@@ -275,15 +365,15 @@ function CoachCallout({ onClose }) {
   return (
     <div style={{ position: "absolute", left: 16, right: 16, bottom: 188, zIndex: 30, animation: "orthRise .4s ease-out both" }}>
       <div style={{ position: "relative", background: black, borderRadius: 24, padding: "22px 22px 20px" }}>
-        <div onClick={onClose} style={{ position: "absolute", top: 18, right: 18, cursor: "pointer" }}>
+        <Pressable onClick={onClose} style={{ position: "absolute", top: 18, right: 18, cursor: "pointer", zIndex: 2 }}>
           <Ico paths={I.x} size={20} color={ink400} />
-        </div>
+        </Pressable>
         <p style={{ color: ink50, fontSize: 17, lineHeight: 1.45, margin: 0, paddingRight: 24 }}>
           Hey Antony! Let's create and profile your first plot. The more details you share, the more personalised and accurate your plans and insights will be.
         </p>
-        <div style={{ marginTop: 20, background: inkUp, borderRadius: 999, padding: "16px", textAlign: "center" }}>
+        <Pressable style={{ marginTop: 20, background: inkUp, borderRadius: 999, padding: "16px", textAlign: "center" }}>
           <span style={{ color: ink50, fontSize: 16, fontWeight: 600 }}>Mark your next plot</span>
-        </div>
+        </Pressable>
         <div style={{ position: "absolute", bottom: -9, left: 30, width: 22, height: 22, background: black, transform: "rotate(45deg)", borderRadius: 4 }} />
       </div>
     </div>
@@ -304,7 +394,7 @@ function HomeMap({ onExpand, coach, onCloseCoach }) {
       <div style={{ position: "absolute", left: 16, right: 16, bottom: 108, zIndex: 30 }}>
         <InputBar ph="Ask about your farm..." bg={ink} />
       </div>
-      <div onClick={onExpand} style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 35, background: "linear-gradient(180deg, #000000, #0c0f13)", borderRadius: 30, padding: "14px 22px 26px", cursor: "pointer" }}>
+      <Pressable onClick={onExpand} scale={0.99} style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 35, background: "linear-gradient(180deg, #000000, #0c0f13)", borderRadius: 30, padding: "14px 22px 26px", cursor: "pointer" }}>
         <div style={{ display: "flex", justifyContent: "center", paddingBottom: 14 }}>
           <div style={{ width: 38, height: 5, borderRadius: 3, background: ink700 }} />
         </div>
@@ -317,7 +407,7 @@ function HomeMap({ onExpand, coach, onCloseCoach }) {
             <span style={{ color: ink50, fontSize: 11.5, fontWeight: 600 }}>4 upcoming actions</span>
           </div>
         </div>
-      </div>
+      </Pressable>
     </>
   );
 }
@@ -325,18 +415,18 @@ function HomeMap({ onExpand, coach, onCloseCoach }) {
 /* ===================== FARM SHEET (unchanged design) ===================== */
 function ActionCard({ a, onClick }) {
   return (
-    <div onClick={onClick} style={{ minWidth: 280, width: 280, background: black, borderRadius: 20, padding: 18, marginRight: 12, marginBottom: 26, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 138, cursor: "pointer" }}>
+    <Pressable onClick={onClick} style={{ minWidth: 280, width: 280, background: black, borderRadius: 20, padding: 18, marginRight: 12, marginBottom: 26, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 138, cursor: "pointer" }}>
       <p style={{ color: text, fontSize: 15, fontWeight: 500, lineHeight: 1.42, whiteSpace: "pre-line" }}>{a.title}</p>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span style={{ color: sec, fontSize: 13 }}>{a.plot}</span>
         <StatusPill status={a.status} />
       </div>
-    </div>
+    </Pressable>
   );
 }
 function PlanCard({ p, onClick }) {
   return (
-    <div onClick={onClick} style={{ minWidth: 320, width: 320, borderRadius: 22, overflow: "hidden", marginRight: 12, marginBottom: 28, background: black, cursor: "pointer" }}>
+    <Pressable onClick={onClick} scale={0.98} style={{ minWidth: 320, width: 320, borderRadius: 22, overflow: "hidden", marginRight: 12, marginBottom: 28, background: black, cursor: "pointer" }}>
       <div style={{ height: 152, position: "relative", background: ink900, overflow: "hidden" }}>
         <img src={p.img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
         <div style={{ position: "absolute", top: 11, right: 11, background: BR.blue, borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -356,26 +446,26 @@ function PlanCard({ p, onClick }) {
           </div>
         </div>
       </div>
-    </div>
+    </Pressable>
   );
 }
 function FileCard({ label, count, img, add }) {
-  const base = { borderRadius: 18, overflow: "hidden", aspectRatio: "1", position: "relative" };
+  const base = { borderRadius: 18, overflow: "hidden", aspectRatio: "1", position: "relative", cursor: "pointer" };
   if (add) return (
-    <div style={{ ...base, background: black, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7 }}>
+    <Pressable style={{ ...base, background: black, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7 }}>
       <Ico paths={I.plus} size={22} color={ter} />
       <span style={{ color: ter, fontSize: 11.5, textAlign: "center", lineHeight: 1.3 }}>Add new<br />files</span>
-    </div>
+    </Pressable>
   );
   return (
-    <div style={{ ...base }}>
+    <Pressable style={{ ...base }}>
       <img src={img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.55) 100%)" }} />
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 15 }}>
         <span style={{ color: ink50, fontSize: 14, fontWeight: 600 }}>{label}</span>
         <span style={{ color: ink50, fontSize: 28, fontWeight: 600, lineHeight: 1 }}>{count}</span>
       </div>
-    </div>
+    </Pressable>
   );
 }
 function PlotRow({ p }) {
@@ -416,16 +506,13 @@ function PlotRow({ p }) {
 }
 const SECT = { color: text, fontSize: 18, fontWeight: 600, letterSpacing: -0.2 };
 const VIEWALL = { color: sec, fontSize: 13 };
-function FarmSheet({ onAction, onPlan, onCollapse, anim, onPeek }) {
+function FarmSheet({ z, show, onExited, onPop, onAction, onPlan }) {
   return (
-    <>
-      <div onClick={onPeek} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 128, zIndex: 5, cursor: "pointer" }} />
+    <div style={{ position: "absolute", inset: 0, zIndex: z }}>
+      <Pressable noHaptic onClick={onPop} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 128, zIndex: 5, cursor: "pointer" }} />
       <TopNav />
-      <div style={{ position: "absolute", top: 128, left: 0, right: 0, bottom: 0, background: ink, borderTopLeftRadius: 30, borderTopRightRadius: 30, zIndex: 20, display: "flex", flexDirection: "column", overflow: "hidden", animation: sheetAnim(anim) }}>
-        <div style={{ flexShrink: 0, padding: "0 16px" }}>
-          <div onClick={onCollapse} style={{ display: "flex", justifyContent: "center", padding: "12px 0 10px", cursor: "pointer" }}>
-            <div style={{ width: 38, height: 5, borderRadius: 3, background: ink700 }} />
-          </div>
+      <Sheet show={show} onExited={onExited} onDismiss={onPop} top={128} background={ink}>
+        <div style={{ flexShrink: 0, padding: "26px 16px 0" }}>
           <p style={{ color: sec, fontSize: 13, marginBottom: 6 }}>Central Hill, France</p>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 18 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -469,8 +556,8 @@ function FarmSheet({ onAction, onPlan, onCollapse, anim, onPeek }) {
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "90px 16px 24px", background: BOTTOM_GRAD }}>
           <InputBar ph="Ask about your farm..." />
         </div>
-      </div>
-    </>
+      </Sheet>
+    </div>
   );
 }
 
@@ -481,12 +568,9 @@ function PlanHeader({ plan, onBack, compact }) {
       <div style={{ height: compact ? 132 : 196, background: ink900, position: "relative", overflow: "hidden" }}>
         <img src={plan.img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 30%, rgba(12,15,19,0.5) 70%, " + ink + ")" }} />
-        <div style={{ position: "absolute", top: 12, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
-          <div style={{ width: 38, height: 5, borderRadius: 3, background: ink400 }} />
-        </div>
-        <div onClick={onBack} style={{ position: "absolute", top: 30, left: 14, cursor: "pointer" }}>
+        <Pressable onClick={onBack} style={{ position: "absolute", top: 30, left: 14, cursor: "pointer", zIndex: 10 }}>
           <Ico paths={I.chevL} size={24} color={ink50} />
-        </div>
+        </Pressable>
       </div>
       <div style={{ padding: "0 16px 10px", marginTop: compact ? -44 : -52, position: "relative" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
@@ -509,7 +593,7 @@ function PlanHeader({ plan, onBack, compact }) {
 function PlanListCard({ a, onClick }) {
   const lines = a.title.split("\n");
   return (
-    <div onClick={onClick} style={{ background: black, borderRadius: 20, padding: 18, marginBottom: 12, cursor: "pointer" }}>
+    <Pressable onClick={onClick} style={{ background: black, borderRadius: 20, padding: 18, marginBottom: 12, cursor: "pointer" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
         <p style={{ color: text, fontSize: 16, fontWeight: 500, lineHeight: 1.4, margin: 0 }}>{lines.map((l, i) => <span key={i}>{l}{i < lines.length - 1 && <br />}</span>)}</p>
         <Ico paths={actionIcon(a.cat)} size={20} color={sec} />
@@ -518,18 +602,18 @@ function PlanListCard({ a, onClick }) {
         <StatusPill status={a.status} big />
         <span style={{ color: sec, fontSize: 13.5 }}>{a.due} · {a.cat}</span>
       </div>
-    </div>
+    </Pressable>
   );
 }
-function PlanDetail({ plan, onBack, onAction, anim, onPeek }) {
+function PlanDetail({ z, show, onExited, plan, onPop, onAction }) {
   const acts = ACTIONS.filter(a => a.plot === plan.plot);
   const list = acts.length ? acts : ACTIONS.slice(0, 3);
   return (
-    <>
-      <div onClick={onPeek} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 128, zIndex: 5, cursor: "pointer" }} />
+    <div style={{ position: "absolute", inset: 0, zIndex: z }}>
+      <Pressable noHaptic onClick={onPop} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 128, zIndex: 5, cursor: "pointer" }} />
       <TopNav />
-      <div style={{ position: "absolute", top: 128, left: 0, right: 0, bottom: 0, background: ink, borderTopLeftRadius: 30, borderTopRightRadius: 30, zIndex: 20, display: "flex", flexDirection: "column", overflow: "hidden", animation: sheetAnim(anim) }}>
-        <PlanHeader plan={plan} onBack={onBack} />
+      <Sheet show={show} onExited={onExited} onDismiss={onPop} top={128} background={ink} grabber="light">
+        <PlanHeader plan={plan} onBack={onPop} />
         <div style={{ display: "flex", gap: 10, padding: "20px 16px 16px", overflowX: "auto" }}>
           {[64, 96, 110, 80].map((w, i) => (
             <div key={i} style={{ height: 34, width: w, flexShrink: 0, borderRadius: 999, background: i === 0 ? inkUp : black }} />
@@ -541,8 +625,8 @@ function PlanDetail({ plan, onBack, onAction, anim, onPeek }) {
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "90px 16px 24px", background: BOTTOM_GRAD }}>
           <InputBar ph="Ask about your plan..." />
         </div>
-      </div>
-    </>
+      </Sheet>
+    </div>
   );
 }
 
@@ -555,22 +639,20 @@ function Field({ label, children, tall }) {
     </div>
   );
 }
-function ActionDetail({ plan, action, onBack, onResolve, anim, onPeek }) {
+function ActionDetail({ z, show, onExited, plan, action, onPop, onResolve }) {
   const lines = action.title.split("\n");
   const btn = { flex: 1, borderRadius: 999, padding: "16px", textAlign: "center", fontSize: 16, fontWeight: 600, cursor: "pointer" };
   return (
-    <>
+    <div style={{ position: "absolute", inset: 0, zIndex: z }}>
+      <Pressable noHaptic onClick={onPop} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 128, zIndex: 5, cursor: "pointer" }} />
       <TopNav />
-      {/* plan base, header pushed up, tap to jump to the plan */}
-      <div onClick={onPeek} style={{ position: "absolute", top: 128, left: 0, right: 0, bottom: 0, background: ink, borderTopLeftRadius: 30, borderTopRightRadius: 30, zIndex: 20, overflow: "hidden", cursor: "pointer" }}>
-        <PlanHeader plan={plan} onBack={onPeek} compact />
+      {/* fixed plan image header — does NOT move; tap to go back to the plan */}
+      <div onClick={onPop} style={{ position: "absolute", top: 128, left: 0, right: 0, bottom: 0, background: ink, borderTopLeftRadius: 30, borderTopRightRadius: 30, zIndex: 6, overflow: "hidden", cursor: "pointer" }}>
+        <PlanHeader plan={plan} onBack={onPop} />
       </div>
-      {/* layered black action card */}
-      <div style={{ position: "absolute", top: 328, left: 0, right: 0, bottom: 0, background: black, borderTopLeftRadius: 30, borderTopRightRadius: 30, zIndex: 26, display: "flex", flexDirection: "column", overflow: "hidden", animation: sheetAnim(anim) }}>
-        <div onClick={onBack} style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px", cursor: "pointer", flexShrink: 0 }}>
-          <div style={{ width: 38, height: 5, borderRadius: 3, background: ink700 }} />
-        </div>
-        <div style={{ flexShrink: 0, padding: "8px 16px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+      {/* dark action card slides up over the fixed image */}
+      <Sheet show={show} onExited={onExited} onDismiss={onPop} top={324} background={black} zIndex={20}>
+        <div style={{ flexShrink: 0, padding: "30px 16px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <p style={{ color: text, fontSize: 19, fontWeight: 600, lineHeight: 1.35, margin: 0 }}>{lines.map((l, i) => <span key={i}>{l}{i < lines.length - 1 && <br />}</span>)}</p>
           <Ico paths={actionIcon(action.cat)} size={22} color={sec} />
         </div>
@@ -584,54 +666,59 @@ function ActionDetail({ plan, action, onBack, onResolve, anim, onPeek }) {
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "90px 16px 24px", background: BOTTOM_GRAD }}>
           <div style={{ marginBottom: 14 }}><InputBar ph="Ask about this action..." bg={ink} /></div>
           <div style={{ display: "flex", gap: 10 }}>
-            <div onClick={onResolve} style={{ ...btn, background: ink900, color: text }}>Skip</div>
-            <div onClick={onResolve} style={{ ...btn, background: ink900, color: text }}>Later</div>
-            <div onClick={onResolve} style={{ ...btn, flex: 1.2, background: BR.green, color: white }}>Done</div>
+            <Pressable onClick={onResolve} style={{ ...btn, background: ink900, color: text }}>Skip</Pressable>
+            <Pressable onClick={onResolve} style={{ ...btn, background: ink900, color: text }}>Later</Pressable>
+            <Pressable onClick={onResolve} style={{ ...btn, flex: 1.2, background: BR.green, color: white }}>Done</Pressable>
           </div>
         </div>
-      </div>
-    </>
+      </Sheet>
+    </div>
   );
 }
 
 /* ===================== app / router ===================== */
 export default function App() {
-  const [view, setView] = useState("onboard");   // onboard | map | farm | plan | action
-  const [anim, setAnim] = useState(null);          // "in" | "out" | null
+  const [onboard, setOnboard] = useState(true);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [sheets, setSheets] = useState([]);        // stack over the map: "farm" | "plan" | "action"
+  const [exiting, setExiting] = useState(false);    // top sheet is animating out
   const [selPlan, setSelPlan] = useState(PLANS[0]);
   const [selAction, setSelAction] = useState(ACTIONS[0]);
-  const [actionFrom, setActionFrom] = useState("farm");
   const [coach, setCoach] = useState(true);
 
-  const open = t => { setAnim("in"); setView(t); };
-  const close = t => { setAnim(null); setView(t); };
+  const push = name => setSheets(s => [...s, name]);
+  const pop = () => { if (sheets.length) setExiting(true); };
+  const onExited = () => { setSheets(s => s.slice(0, -1)); setExiting(false); };
 
-  const openPlan = p => { setSelPlan(p); open("plan"); };
-  const openActionFromFarm = a => {
-    setSelPlan(PLANS.find(p => p.plot === a.plot) || PLANS[0]);
-    setSelAction(a); setActionFrom("farm"); open("action");
-  };
-  const openActionFromPlan = a => { setSelAction(a); setActionFrom("plan"); open("action"); };
+  const openFarm = () => push("farm");
+  const openPlan = p => { setSelPlan(p); push("plan"); };
+  const openActionFromFarm = a => { setSelPlan(PLANS.find(p => p.plot === a.plot) || PLANS[0]); setSelAction(a); push("action"); };
+  const openActionFromPlan = a => { setSelAction(a); push("action"); };
 
+  if (onboard)
+    return (
+      <Frame>
+        <Onboarding step={step} setStep={setStep} answers={answers} setAnswers={setAnswers} onDone={() => setOnboard(false)} />
+      </Frame>
+    );
 
-  let screen;
-  if (view === "onboard")
-    screen = <Onboarding step={step} setStep={setStep} answers={answers} setAnswers={setAnswers} onDone={() => open("farm")} />;
-  else if (view === "map")
-    screen = <HomeMap onExpand={() => open("farm")} coach={coach} onCloseCoach={() => setCoach(false)} />;
-  else if (view === "plan")
-    screen = <PlanDetail plan={selPlan} anim={anim} onBack={() => close("farm")} onPeek={() => close("farm")} onAction={openActionFromPlan} />;
-  else if (view === "action")
-    screen = <ActionDetail plan={selPlan} action={selAction} anim={anim} onBack={() => close(actionFrom)} onPeek={() => close("plan")} onResolve={() => close(actionFrom)} />;
-  else
-    screen = <FarmSheet anim={anim} onAction={openActionFromFarm} onPlan={openPlan} onCollapse={() => close("map")} onPeek={() => close("map")} />;
-
+  const topIdx = sheets.length - 1;
   return (
     <Frame>
       <div style={{ position: "absolute", inset: 0, background: "#141719", zIndex: 0 }} />
-      {screen}
+      <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
+        <HomeMap onExpand={openFarm} coach={coach} onCloseCoach={() => setCoach(false)} />
+      </div>
+      {sheets.map((name, i) => {
+        const show = !(exiting && i === topIdx);
+        const z = 10 + i * 10;
+        const shared = { key: name + i, z, show, onExited, onPop: pop };
+        if (name === "farm") return <FarmSheet {...shared} onAction={openActionFromFarm} onPlan={openPlan} />;
+        if (name === "plan") return <PlanDetail {...shared} plan={selPlan} onAction={openActionFromPlan} />;
+        if (name === "action") return <ActionDetail {...shared} plan={selPlan} action={selAction} onResolve={pop} />;
+        return null;
+      })}
     </Frame>
   );
 }
