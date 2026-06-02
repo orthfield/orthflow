@@ -25,8 +25,4 @@ html, body, #root {
     height: 100dvh !important;
     border-radius: 0 !important;
   }
-  /* button/input bars sit just above the home indicator */
-  .orth-bottom-pad {
-    padding-bottom: env(safe-area-inset-bottom) !important;
-  }
 }
