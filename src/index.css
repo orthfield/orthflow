@@ -19,7 +19,7 @@ html, body {
   .orth-shell { display: contents !important; }
   .orth-frame {
     width: 100vw !important;
-    height: 100dvh !important;
+    height: var(--app-height, 100dvh) !important;
     border-radius: 0 !important;
     /* push content below the notch/dynamic island */
     padding-top: env(safe-area-inset-top);
