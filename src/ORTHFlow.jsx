@@ -88,22 +88,11 @@ const circleBtn = { width: 40, height: 40, borderRadius: "50%", background: blac
 /* ===================== iOS interaction primitives ===================== */
 const SPRING = "cubic-bezier(0.32, 0.72, 0, 1)";   // iOS sheet-present curve
 
-// Web haptics: navigator.vibrate (Android) + the iOS 17.4+ <input switch> tap.
-function ensureHaptic() {
-  if (typeof document === "undefined" || window.__orthHaptic) return;
-  const label = document.createElement("label");
-  label.setAttribute("aria-hidden", "true");
-  label.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden";
-  const input = document.createElement("input");
-  input.type = "checkbox";
-  input.setAttribute("switch", "");
-  label.appendChild(input);
-  document.body.appendChild(label);
-  window.__orthHaptic = label;
-}
+// navigator.vibrate is Android-only; iOS ignores it. iOS haptics on the web
+// are only emitted when the user genuinely toggles an <input switch> control —
+// so Pressable renders a hidden one and lets the real tap toggle it (iOS 17.4+).
 function haptic(ms = 7) {
   try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
-  try { ensureHaptic(); window.__orthHaptic && window.__orthHaptic.click(); } catch (e) {}
 }
 
 // Press feedback: scales + dims under the finger, springs back. Fires a haptic on tap.
@@ -111,17 +100,22 @@ function Pressable({ onClick, scale = 0.965, disabled, style, children, stop, no
   const [down, setDown] = useState(false);
   if (disabled) return <div style={style} {...rest}>{children}</div>;
   return (
-    <div
+    <label
       onPointerDown={() => setDown(true)}
       onPointerUp={() => setDown(false)}
       onPointerCancel={() => setDown(false)}
       onPointerLeave={() => setDown(false)}
       onClick={e => { if (stop) e.stopPropagation(); if (!noHaptic) haptic(); onClick && onClick(e); }}
-      style={{ ...style, transform: `${style && style.transform ? style.transform + " " : ""}scale(${down ? scale : 1})`, opacity: down ? 0.88 : 1, transition: `transform .22s ${SPRING}, opacity .22s ${SPRING}`, WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+      style={{ display: (style && style.display) || "block", ...style, transform: `${style && style.transform ? style.transform + " " : ""}scale(${down ? scale : 1})`, opacity: down ? 0.88 : 1, transition: `transform .22s ${SPRING}, opacity .22s ${SPRING}`, WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
       {...rest}
     >
+      {!noHaptic && (
+        <input ref={el => el && el.setAttribute("switch", "")} type="checkbox" aria-hidden="true" tabIndex={-1}
+          onClick={e => e.stopPropagation()}
+          style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none", margin: 0 }} />
+      )}
       {children}
-    </div>
+    </label>
   );
 }
 
