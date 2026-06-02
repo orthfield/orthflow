@@ -564,7 +564,7 @@ function FarmSheet({ z, show, onExited, onPop, onAction, onPlan }) {
 }
 
 /* ===================== PLAN / ACTION shared header ===================== */
-function PlanHeader({ plan, onBack, compact }) {
+function PlanHeader({ plan, onBack, compact, lift = 0 }) {
   return (
     <div style={{ flexShrink: 0, position: "relative" }}>
       <div style={{ height: compact ? 132 : 196, background: ink900, position: "relative", overflow: "hidden" }}>
@@ -574,7 +574,7 @@ function PlanHeader({ plan, onBack, compact }) {
           <Ico paths={I.chevL} size={24} color={ink50} />
         </Pressable>
       </div>
-      <div style={{ padding: "0 16px 10px", marginTop: compact ? -44 : -52, position: "relative" }}>
+      <div style={{ padding: "0 16px 10px", marginTop: compact ? -44 : -52, position: "relative", transform: `translateY(${lift}px)`, transition: `transform .44s ${SPRING}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
           <span style={{ color: text, fontSize: 27, fontWeight: 600, letterSpacing: -0.5 }}>{plan.title}</span>
           <Ico paths={I.edit} size={17} color={sec} />
@@ -646,16 +646,19 @@ function Field({ label, children, tall }) {
 function ActionDetail({ z, show, onExited, plan, action, onPop, onResolve }) {
   const lines = action.title.split("\n");
   const btn = { flex: 1, borderRadius: 999, padding: "16px", textAlign: "center", fontSize: 16, fontWeight: 600, cursor: "pointer" };
+  // header eases up 40px in sync with the card, giving the card more room
+  const [up, setUp] = useState(false);
+  useEffect(() => { const id = requestAnimationFrame(() => setUp(show)); return () => cancelAnimationFrame(id); }, [show]);
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: z }}>
       <Pressable noHaptic onClick={onPop} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 128, zIndex: 5, cursor: "pointer" }} />
       <TopNav />
-      {/* fixed plan image header — does NOT move; tap to go back to the plan */}
+      {/* fixed plan image header — image stays put, the title block lifts up with the card */}
       <div onClick={onPop} style={{ position: "absolute", top: 128, left: 0, right: 0, bottom: 0, background: ink, borderTopLeftRadius: 30, borderTopRightRadius: 30, zIndex: 6, overflow: "hidden", cursor: "pointer" }}>
-        <PlanHeader plan={plan} onBack={onPop} />
+        <PlanHeader plan={plan} onBack={onPop} lift={up ? -40 : 0} />
       </div>
-      {/* dark action card slides up over the fixed image */}
-      <Sheet show={show} onExited={onExited} onDismiss={onPop} top={324} background={black} zIndex={20}>
+      {/* dark action card slides up over the image */}
+      <Sheet show={show} onExited={onExited} onDismiss={onPop} top={284} background={black} zIndex={20}>
         <div style={{ flexShrink: 0, padding: "30px 16px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <p style={{ color: text, fontSize: 19, fontWeight: 600, lineHeight: 1.35, margin: 0 }}>{lines.map((l, i) => <span key={i}>{l}{i < lines.length - 1 && <br />}</span>)}</p>
           <Ico paths={actionIcon(action.cat)} size={22} color={sec} />
