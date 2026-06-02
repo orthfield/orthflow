@@ -617,7 +617,7 @@ function PlanDetail({ z, show, onExited, plan, onPop, onAction }) {
       <Sheet show={show} onExited={onExited} onDismiss={onPop} top={128} background={ink} grabber="light">
         <PlanHeader plan={plan} onBack={onPop} />
         <div style={{ display: "flex", gap: 10, padding: "20px 16px 16px" }}>
-          {["Sort", "", "", ""].map((label, i) => (
+          {["", "", "", ""].map((label, i) => (
             <Pressable key={i} style={{ flex: 1, height: 34, borderRadius: 999, background: black, display: "flex", alignItems: "center", justifyContent: "center" }}>
               {label && <span style={{ color: sec, fontSize: 13.5, fontWeight: 500 }}>{label}</span>}
             </Pressable>
