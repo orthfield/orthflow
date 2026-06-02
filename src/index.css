@@ -14,10 +14,15 @@ html, body, #root {
 @keyframes orthRise { from { transform: translateY(16px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
 
 @media (max-width: 480px) {
-  .orth-shell { display: contents !important; }
+  .orth-shell {
+    display: block !important;
+    height: 100dvh !important;
+    min-height: unset !important;
+    padding: 0 !important;
+  }
   .orth-frame {
-    width: 100% !important;
-    height: 100% !important;
+    width: 100vw !important;
+    height: 100dvh !important;
     border-radius: 0 !important;
   }
 }
