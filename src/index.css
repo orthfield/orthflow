@@ -1,7 +1,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  background: #000;
+  background: #0c0f13;
   height: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -15,7 +15,7 @@ html, body {
   .orth-shell { display: contents !important; }
   .orth-frame {
     width: 100vw !important;
-    height: 100svh !important;
+    height: 100dvh !important;
     border-radius: 0 !important;
     /* push content below the notch/dynamic island */
     padding-top: env(safe-area-inset-top);
