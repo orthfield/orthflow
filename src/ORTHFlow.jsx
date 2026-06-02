@@ -655,7 +655,7 @@ function ActionDetail({ z, show, onExited, plan, action, onPop, onResolve }) {
       <TopNav />
       {/* fixed plan image header — image stays put, the title block lifts up with the card */}
       <div onClick={onPop} style={{ position: "absolute", top: 128, left: 0, right: 0, bottom: 0, background: ink, borderTopLeftRadius: 30, borderTopRightRadius: 30, zIndex: 6, overflow: "hidden", cursor: "pointer" }}>
-        <PlanHeader plan={plan} onBack={onPop} lift={up ? -40 : 0} />
+        <PlanHeader plan={plan} onBack={onPop} lift={up ? -60 : 0} />
       </div>
       {/* dark action card slides up over the image */}
       <Sheet show={show} onExited={onExited} onDismiss={onPop} top={284} background={black} zIndex={20}>
