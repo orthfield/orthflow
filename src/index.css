@@ -16,13 +16,13 @@ html, body, #root {
 @media (max-width: 480px) {
   .orth-shell {
     display: block !important;
-    height: var(--app-height, 100dvh) !important;
+    height: 100lvh !important;
     min-height: unset !important;
     padding: 0 !important;
   }
   .orth-frame {
     width: 100vw !important;
-    height: var(--app-height, 100dvh) !important;
+    height: 100lvh !important;
     border-radius: 0 !important;
   }
 }

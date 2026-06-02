@@ -5,24 +5,6 @@
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <script>
-      // iOS standalone paints the first frame before the viewport height is
-      // final, so 100dvh resolves stale and only corrects on first scroll.
-      // Pin the real height from JS and re-measure as the launch settles.
-      (function () {
-        function setH() {
-          document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
-        }
-        setH();
-        window.addEventListener('resize', setH);
-        window.addEventListener('orientationchange', setH);
-        window.addEventListener('pageshow', setH);
-        // catch iOS's late viewport correction after first paint
-        requestAnimationFrame(setH);
-        setTimeout(setH, 50);
-        setTimeout(setH, 300);
-      })();
-    </script>
     <title>ORTHFlow</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
