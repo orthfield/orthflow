@@ -658,7 +658,7 @@ function ActionDetail({ z, show, onExited, plan, action, onPop, onResolve }) {
         <PlanHeader plan={plan} onBack={onPop} lift={up ? -60 : 0} />
       </div>
       {/* dark action card slides up over the image */}
-      <Sheet show={show} onExited={onExited} onDismiss={onPop} top={300} background={black} zIndex={20}>
+      <Sheet show={show} onExited={onExited} onDismiss={onPop} top={322} background={black} zIndex={20}>
         <div style={{ flexShrink: 0, padding: "30px 16px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <p style={{ color: text, fontSize: 19, fontWeight: 600, lineHeight: 1.35, margin: 0 }}>{lines.map((l, i) => <span key={i}>{l}{i < lines.length - 1 && <br />}</span>)}</p>
           <Ico paths={actionIcon(action.cat)} size={22} color={sec} />
