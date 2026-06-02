@@ -568,7 +568,7 @@ function PlanHeader({ plan, onBack, compact, lift = 0 }) {
           <Ico paths={I.chevL} size={24} color={ink50} />
         </Pressable>
       </div>
-      <div style={{ padding: "0 16px 10px", marginTop: compact ? -44 : -52, position: "relative", transform: `translateY(${lift}px)`, transition: `transform .44s ${SPRING}` }}>
+      <div style={{ padding: "0 16px 18px", marginTop: compact ? -44 : -52, position: "relative", transform: `translateY(${lift}px)`, transition: `transform .44s ${SPRING}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
           <span style={{ color: text, fontSize: 27, fontWeight: 600, letterSpacing: -0.5 }}>{plan.title}</span>
           <Ico paths={I.edit} size={17} color={sec} />
@@ -611,7 +611,7 @@ function PlanDetail({ z, show, onExited, plan, onPop, onAction }) {
       <Sheet show={show} onExited={onExited} onDismiss={onPop} top={128} background={ink} grabber="light">
         <PlanHeader plan={plan} onBack={onPop} />
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 110px" }}>
-          <div style={{ display: "flex", gap: 10, padding: "20px 0 16px" }}>
+          <div style={{ display: "flex", gap: 10, padding: "8px 0 16px" }}>
             {["", "", "", ""].map((label, i) => (
               <Pressable key={i} style={{ flex: 1, height: 34, borderRadius: 999, background: black, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {label && <span style={{ color: sec, fontSize: 13.5, fontWeight: 500 }}>{label}</span>}
