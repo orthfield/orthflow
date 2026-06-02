@@ -1,14 +1,10 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body {
-  background: #0c0f13;
+html, body, #root {
   height: 100%;
+  background: #0c0f13;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-#root {
-  height: 100%;
 }
 
 ::placeholder { color: #757a7f; opacity: 1; }
@@ -20,8 +16,8 @@ html, body {
 @media (max-width: 480px) {
   .orth-shell { display: contents !important; }
   .orth-frame {
-    width: 100vw !important;
-    height: var(--app-height, 100dvh) !important;
+    width: 100% !important;
+    height: 100% !important;
     border-radius: 0 !important;
   }
 }
