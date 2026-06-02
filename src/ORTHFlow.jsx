@@ -72,22 +72,7 @@ function PlotGlyph({ shape, rot, size = 15, dots = false, sw = 1.4 }) {
     </svg>
   );
 }
-function useFonts() {
-  useEffect(() => {
-    if (!document.getElementById("nunito-sans")) {
-      const f = document.createElement("link"); f.id = "nunito-sans"; f.rel = "stylesheet";
-      f.href = "https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;500;600&display=swap";
-      document.head.appendChild(f);
-    }
-    if (!document.getElementById("orth-anim")) {
-      const s = document.createElement("style"); s.id = "orth-anim";
-      s.textContent = "@keyframes orthIn{from{transform:translateY(100%)}to{transform:translateY(0)}}@keyframes orthOut{from{transform:translateY(0)}to{transform:translateY(100%)}}@keyframes orthRise{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}";
-      document.head.appendChild(s);
-    }
-  }, []);
-}
 function Frame({ children }) {
-  useFonts();
   return (
     <div className="orth-shell" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: black, padding: "24px 0", fontFamily: "'Nunito Sans', -apple-system, sans-serif" }}>
       <div className="orth-frame" style={{ width: 402, height: 874, position: "relative", overflow: "hidden", background: ink, borderRadius: 55 }}>

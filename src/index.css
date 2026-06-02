@@ -11,6 +11,10 @@ html, body {
   height: 100%;
 }
 
+@keyframes orthIn  { from { transform: translateY(100%) } to { transform: translateY(0) } }
+@keyframes orthOut { from { transform: translateY(0) } to { transform: translateY(100%) } }
+@keyframes orthRise { from { transform: translateY(16px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+
 @media (max-width: 480px) {
   .orth-shell { display: contents !important; }
   .orth-frame {
