@@ -17,8 +17,7 @@ html, body {
     width: 100vw !important;
     height: 100svh !important;
     border-radius: 0 !important;
-    /* extend background into notch / home-bar areas */
+    /* push content below the notch/dynamic island */
     padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
   }
 }
