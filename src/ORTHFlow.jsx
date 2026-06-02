@@ -237,6 +237,7 @@ function Onboarding({ step, setStep, answers, setAnswers, onDone }) {
         <div onClick={ready ? next : undefined} style={{ background: ready ? ink50 : inkUp, color: ready ? ink : ter, borderRadius: 999, padding: 20, textAlign: "center", fontSize: 18, fontWeight: 600, cursor: ready ? "pointer" : "default" }}>
           {step === STEPS.length - 1 ? "Open my farm" : "Continue"}
         </div>
+        <div style={{ height: "env(safe-area-inset-bottom, 0px)", flexShrink: 0 }} />
       </div>
     </>
   );
