@@ -216,7 +216,7 @@ function Onboarding({ step, setStep, answers, setAnswers, onDone }) {
   };
   return (
     <>
-      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", paddingTop: 64, paddingLeft: 16, paddingRight: 16, paddingBottom: "env(safe-area-inset-bottom, 16px)", background: ink, zIndex: 1 }}>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", padding: "64px 16px 24px", background: ink, zIndex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 40 }}>
           <div onClick={() => step > 0 && setStep(step - 1)} style={{ width: 52, height: 52, borderRadius: "50%", background: black, display: "flex", alignItems: "center", justifyContent: "center", cursor: step > 0 ? "pointer" : "default", opacity: step > 0 ? 1 : 0.4 }}>
             <Ico paths={I.chevL} size={24} color={ink50} />
@@ -465,7 +465,7 @@ function FarmSheet({ onAction, onPlan, onCollapse, anim, onPeek }) {
           </div>
           <div style={{ padding: "0 16px" }}>{PLOTS.map((p, i) => <PlotRow key={i} p={p} />)}</div>
         </div>
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, paddingTop: 90, paddingLeft: 16, paddingRight: 16, paddingBottom: "env(safe-area-inset-bottom, 16px)", background: BOTTOM_GRAD }}>
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "90px 16px 24px", background: BOTTOM_GRAD }}>
           <InputBar ph="Ask about your farm..." />
         </div>
       </div>
@@ -537,7 +537,7 @@ function PlanDetail({ plan, onBack, onAction, anim, onPeek }) {
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 110px" }}>
           {list.map((a, i) => <PlanListCard key={i} a={a} onClick={() => onAction(a)} />)}
         </div>
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, paddingTop: 90, paddingLeft: 16, paddingRight: 16, paddingBottom: "env(safe-area-inset-bottom, 16px)", background: BOTTOM_GRAD }}>
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "90px 16px 24px", background: BOTTOM_GRAD }}>
           <InputBar ph="Ask about your plan..." />
         </div>
       </div>
@@ -580,7 +580,7 @@ function ActionDetail({ plan, action, onBack, onResolve, anim, onPeek }) {
           <Field label="Plot"><span style={{ color: text, fontSize: 15, fontWeight: 500 }}>{action.plot}</span></Field>
           <Field label="Notes" tall><span style={{ color: ink200, fontSize: 15, lineHeight: 1.5 }}>{action.note}</span></Field>
         </div>
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, paddingTop: 90, paddingLeft: 16, paddingRight: 16, paddingBottom: "env(safe-area-inset-bottom, 16px)", background: BOTTOM_GRAD }}>
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "90px 16px 24px", background: BOTTOM_GRAD }}>
           <div style={{ marginBottom: 14 }}><InputBar ph="Ask about this action..." bg={ink} /></div>
           <div style={{ display: "flex", gap: 10 }}>
             <div onClick={onResolve} style={{ ...btn, background: ink900, color: text }}>Skip</div>
