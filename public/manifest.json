@@ -1,0 +1,9 @@
+{
+  "name": "ORTHFlow",
+  "short_name": "ORTHFlow",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#0c0f13",
+  "start_url": "/",
+  "orientation": "portrait"
+}
