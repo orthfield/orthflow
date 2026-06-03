@@ -6,7 +6,7 @@ import {
 } from "iconoir-react";
 
 /* ===================== tokens ===================== */
-const ink = "#0c0f13", ink900 = "#141719", inkUp = "#1e2226", ink700 = "#2e3337",
+const ink = "#0c0f13", ink900 = "#141719", ink850 = "#191c1f", inkUp = "#1e2226", ink700 = "#2e3337",
   ink600 = "#404549", ink500 = "#585d62", ink400 = "#757a7f", ink300 = "#979b9f",
   ink200 = "#bcbfc3", ink100 = "#dcdfe2", ink50 = "#f0f2f4";
 const black = "#000000", white = "#ffffff";
@@ -302,10 +302,7 @@ function Onboarding({ step, setStep, answers, setAnswers, onDone }) {
   return (
     <>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", padding: "64px 16px 24px", background: ink, zIndex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 40 }}>
-          <Pressable onClick={() => step > 0 && setStep(step - 1)} disabled={step === 0} style={{ width: 52, height: 52, borderRadius: "50%", background: black, display: "flex", alignItems: "center", justifyContent: "center", cursor: step > 0 ? "pointer" : "default", opacity: step > 0 ? 1 : 0.4, flexShrink: 0 }}>
-            <Ico paths={I.chevL} size={24} color={ink50} />
-          </Pressable>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 40, height: 52 }}>
           <div style={{ flex: 1, height: 4, borderRadius: 3, background: inkUp }}>
             <div style={{ width: `${((step + 1) / STEPS.length) * 100}%`, height: "100%", borderRadius: 3, background: ink50, transition: `width .35s ${SPRING}` }} />
           </div>
@@ -319,9 +316,16 @@ function Onboarding({ step, setStep, answers, setAnswers, onDone }) {
           {s.kind === "draw" && <DrawPlot points={pts} setPoints={setPts} />}
           {s.kind === "date" && <DatePick value={val} onChange={set} />}
         </div>
-        <Pressable onClick={ready ? next : undefined} disabled={!ready} scale={0.98} style={{ background: ready ? ink50 : inkUp, color: ready ? ink : ter, borderRadius: 999, padding: 20, textAlign: "center", fontSize: 18, fontWeight: 600, cursor: ready ? "pointer" : "default" }}>
-          {step === STEPS.length - 1 ? "Open my farm" : "Continue"}
-        </Pressable>
+        <div style={{ display: "flex", gap: 12, alignItems: "stretch" }}>
+          {step > 0 && (
+            <Pressable onClick={() => setStep(step - 1)} style={{ width: 64, flexShrink: 0, borderRadius: 999, background: ink900, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+              <Ico paths={I.chevL} size={24} color={ink50} />
+            </Pressable>
+          )}
+          <Pressable onClick={ready ? next : undefined} disabled={!ready} scale={0.98} style={{ flex: 1, background: ready ? ink50 : inkUp, color: ready ? ink : ter, borderRadius: 999, padding: 20, textAlign: "center", fontSize: 18, fontWeight: 600, cursor: ready ? "pointer" : "default" }}>
+            {step === STEPS.length - 1 ? "Open my farm" : "Continue"}
+          </Pressable>
+        </div>
         <div style={{ height: "env(safe-area-inset-bottom, 0px)", flexShrink: 0 }} />
       </div>
     </>
@@ -501,7 +505,63 @@ function PlotRow({ p }) {
 }
 const SECT = { color: text, fontSize: 18, fontWeight: 600, letterSpacing: -0.2 };
 const VIEWALL = { color: sec, fontSize: 13 };
-function FarmSheet({ z, show, onExited, onPop, onAction, onPlan }) {
+
+/* ===================== farm coach tour (reversible: set TOUR_ENABLED = false to remove) ===================== */
+const TOUR_ENABLED = false;   // coach tour kept but switched off; flip to true to re-enable
+const TOUR_STEPS = [
+  { key: "actions", title: "Upcoming actions", body: "Tap a card to see what needs doing, when and where." },
+  { key: "plans", title: "Active plans", body: "Follow each program's progress across your plots." },
+  { key: "files", title: "Your farm files", body: "Documents and media, all kept in one place." },
+  { key: "ask", title: "Ask ORTH anything", body: "Get instant answers and advice about your farm." },
+];
+function FarmTour({ targets, scrollRef, onDone }) {
+  const [step, setStep] = useState(0);
+  const [pos, setPos] = useState(null);
+  const s = TOUR_STEPS[step];
+  const last = step === TOUR_STEPS.length - 1;
+
+  useEffect(() => {
+    const el = targets[s.key] && targets[s.key].current;
+    if (!el) return;
+    if (s.key !== "ask" && scrollRef.current) {
+      try { scrollRef.current.scrollTo({ top: Math.max(0, el.offsetTop - 110), behavior: "smooth" }); } catch (e) {}
+    }
+    const id = setTimeout(() => {
+      const frameEl = el.closest(".orth-frame"); if (!frameEl) return;
+      const r = el.getBoundingClientRect(), fr = frameEl.getBoundingClientRect();
+      const caretLeft = Math.min(Math.max(r.left - fr.left + r.width / 2, 46), fr.width - 46);
+      if (s.key === "ask") setPos({ mode: "above", bottom: fr.height - (r.top - fr.top) + 14, caretLeft });
+      else setPos({ mode: "below", top: r.bottom - fr.top + 14, caretLeft });
+    }, 280);
+    return () => clearTimeout(id);
+  }, [step]);
+
+  const below = !pos || pos.mode === "below";
+  return (
+    <>
+      <div style={{ position: "absolute", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.34)" }} />
+      {pos && (
+        <div style={{ position: "absolute", left: 16, right: 16, zIndex: 61, background: black, opacity: 0.95, border: `1px solid ${ink850}`, borderRadius: 22, padding: "20px 20px 18px", animation: "orthRise .3s ease-out both", ...(below ? { top: pos.top } : { bottom: pos.bottom }) }}>
+          <div style={{ position: "absolute", left: pos.caretLeft - 16 - 8, width: 15, height: 15, background: black, transform: "rotate(45deg)", ...(below ? { top: -8, borderLeft: `1px solid ${ink850}`, borderTop: `1px solid ${ink850}` } : { bottom: -8, borderRight: `1px solid ${ink850}`, borderBottom: `1px solid ${ink850}` }) }} />
+          <p style={{ color: ink50, fontSize: 18, fontWeight: 600, margin: "0 0 6px", letterSpacing: -0.3 }}>{s.title}</p>
+          <p style={{ color: ink300, fontSize: 14.5, lineHeight: 1.5, margin: 0 }}>{s.body}</p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 18 }}>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              {TOUR_STEPS.map((_, i) => (
+                <div key={i} style={{ width: i === step ? 18 : 7, height: 7, borderRadius: 4, background: i === step ? ink50 : ink700, transition: `width .25s ${SPRING}` }} />
+              ))}
+            </div>
+            <Pressable onClick={() => last ? onDone() : setStep(step + 1)} style={{ background: ink50, color: ink, borderRadius: 999, padding: "10px 22px", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
+              {last ? "Got it" : "Next"}
+            </Pressable>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+function FarmSheet({ z, show, onExited, onPop, onAction, onPlan, tour, onTourDone }) {
+  const scrollRef = useRef(null), actionsRef = useRef(null), plansRef = useRef(null), filesRef = useRef(null), askRef = useRef(null);
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: z }}>
       <Pressable noHaptic onClick={onPop} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 128, zIndex: 5, cursor: "pointer" }} />
@@ -520,24 +580,24 @@ function FarmSheet({ z, show, onExited, onPop, onAction, onPlan }) {
             </Pressable>
           </div>
         </div>
-        <div style={{ flex: 1, overflowY: "auto", paddingBottom: 110 }}>
+        <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", paddingBottom: 110 }}>
           <div style={{ display: "flex", gap: 13, padding: "2px 16px 26px" }}>
             {[0, 1, 2, 3, 4].map(i => <div key={i} style={{ width: 58, height: 58, borderRadius: "50%", flexShrink: 0, background: black }} />)}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 16px 14px" }}>
             <span style={SECT}>Upcoming Actions</span><span style={VIEWALL}>View all</span>
           </div>
-          <div style={{ display: "flex", overflowX: "auto", padding: "0 0 0 16px" }}>
+          <div ref={actionsRef} style={{ display: "flex", overflowX: "auto", padding: "0 0 0 16px" }}>
             {ACTIONS.map((a, i) => <ActionCard key={i} a={a} onClick={() => onAction(a)} />)}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 16px 14px" }}>
             <span style={SECT}>Active Plans</span><span style={VIEWALL}>View all</span>
           </div>
-          <div style={{ display: "flex", overflowX: "auto", padding: "0 0 0 16px" }}>
+          <div ref={plansRef} style={{ display: "flex", overflowX: "auto", padding: "0 0 0 16px" }}>
             {PLANS.map((p, i) => <PlanCard key={i} p={p} onClick={() => onPlan(p)} />)}
           </div>
           <div style={{ padding: "0 16px 14px" }}><span style={SECT}>Files from your farm</span></div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, padding: "0 16px 28px" }}>
+          <div ref={filesRef} style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, padding: "0 16px 28px" }}>
             <FileCard label="Documents" count={7} img="/hans-Qmg1Fh-9nII-unsplash.jpg" />
             <FileCard label="Media" count={2} img="/josefin-zcQuTAJHi-c-unsplash.jpg" />
             <FileCard add />
@@ -552,10 +612,13 @@ function FarmSheet({ z, show, onExited, onPop, onAction, onPlan }) {
             <span style={{ color: ter, fontSize: 27, fontWeight: 600, letterSpacing: -0.5 }}>Mark your next plot</span>
           </Pressable>
         </div>
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "90px 16px 24px", background: BOTTOM_GRAD }}>
+        <div ref={askRef} style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "90px 16px 24px", background: BOTTOM_GRAD }}>
           <InputBar ph="Ask about your farm..." />
         </div>
       </Sheet>
+      {TOUR_ENABLED && tour && (
+        <FarmTour targets={{ actions: actionsRef, plans: plansRef, files: filesRef, ask: askRef }} scrollRef={scrollRef} onDone={onTourDone} />
+      )}
     </div>
   );
 }
@@ -688,6 +751,7 @@ export default function App() {
   const [selPlan, setSelPlan] = useState(PLANS[0]);
   const [selAction, setSelAction] = useState(ACTIONS[0]);
   const [coach, setCoach] = useState(true);
+  const [showTour, setShowTour] = useState(TOUR_ENABLED);   // farm coach tour, shown once on landing
 
   const push = name => setSheets(s => [...s, name]);
   const pop = () => { if (sheets.length) setExitCount(1); };                      // back one level
@@ -718,10 +782,11 @@ export default function App() {
       {sheets.map((name, i) => {
         const show = i < sheets.length - exitCount;     // top `exitCount` sheets animate out
         const z = 10 + i * 10;
-        const shared = { key: name + i, z, show, onExited: () => onExited(i), onPop: pop };
-        if (name === "farm") return <FarmSheet {...shared} onAction={openActionFromFarm} onPlan={openPlan} />;
-        if (name === "plan") return <PlanDetail {...shared} plan={selPlan} onAction={openActionFromPlan} lift={sheets[i + 1] === "action" && exitCount === 0 ? -60 : 0} />;
-        if (name === "action") return <ActionDetail {...shared} action={selAction} onResolve={pop} onBackToFarm={() => popToName("farm")} />;
+        const key = name + i;
+        const shared = { z, show, onExited: () => onExited(i), onPop: pop };
+        if (name === "farm") return <FarmSheet key={key} {...shared} onAction={openActionFromFarm} onPlan={openPlan} tour={showTour && sheets.length === 1} onTourDone={() => setShowTour(false)} />;
+        if (name === "plan") return <PlanDetail key={key} {...shared} plan={selPlan} onAction={openActionFromPlan} lift={sheets[i + 1] === "action" && exitCount === 0 ? -60 : 0} />;
+        if (name === "action") return <ActionDetail key={key} {...shared} action={selAction} onResolve={pop} onBackToFarm={() => popToName("farm")} />;
         return null;
       })}
     </Frame>
