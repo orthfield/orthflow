@@ -604,7 +604,7 @@ function PlanListCard({ a, onClick }) {
     </Pressable>
   );
 }
-function PlanDetail({ z, show, onExited, plan, onPop, onAction }) {
+function PlanDetail({ z, show, onExited, plan, onPop, onAction, lift = 0 }) {
   const acts = ACTIONS.filter(a => a.plot === plan.plot);
   const list = acts.length ? acts : ACTIONS.slice(0, 3);
   return (
@@ -612,7 +612,7 @@ function PlanDetail({ z, show, onExited, plan, onPop, onAction }) {
       <Pressable noHaptic onClick={onPop} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 128, zIndex: 5, cursor: "pointer" }} />
       <TopNav />
       <Sheet show={show} onExited={onExited} onDismiss={onPop} top={128} background={ink} grabber="light">
-        <PlanHeader plan={plan} onBack={onPop} />
+        <PlanHeader plan={plan} onBack={onPop} lift={lift} />
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 110px" }}>
           <div style={{ display: "flex", gap: 10, padding: "8px 0 16px" }}>
             {["", "", "", ""].map((label, i) => (
@@ -640,21 +640,19 @@ function Field({ label, children, tall }) {
     </div>
   );
 }
-function ActionDetail({ z, show, onExited, plan, action, onPop, onResolve }) {
+function ActionDetail({ z, show, onExited, action, onPop, onResolve, onBackToFarm }) {
   const lines = action.title.split("\n");
   const btn = { flex: 1, borderRadius: 999, padding: "16px", textAlign: "center", fontSize: 16, fontWeight: 600, cursor: "pointer" };
-  // header eases up 40px in sync with the card, giving the card more room
-  const [up, setUp] = useState(false);
-  useEffect(() => { const id = requestAnimationFrame(() => setUp(show)); return () => cancelAnimationFrame(id); }, [show]);
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: z }}>
-      <Pressable noHaptic onClick={onPop} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 128, zIndex: 5, cursor: "pointer" }} />
+      {/* the real plan layer shows through above the card; tap it to dismiss the action */}
+      <Pressable noHaptic onClick={onPop} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 322, zIndex: 5, cursor: "pointer" }} />
+      {/* top-left arrow skips the plan and goes straight back to the farm (large hit target) */}
+      <Pressable onClick={onBackToFarm} style={{ position: "absolute", top: 20, left: 4, zIndex: 10, padding: 10, cursor: "pointer" }}>
+        <Ico paths={I.chevL} size={24} color={ink50} />
+      </Pressable>
       <TopNav />
-      {/* fixed plan image header — image stays put, the title block lifts up with the card */}
-      <div onClick={onPop} style={{ position: "absolute", top: 128, left: 0, right: 0, bottom: 0, background: ink, borderTopLeftRadius: 30, borderTopRightRadius: 30, zIndex: 6, overflow: "hidden", cursor: "pointer" }}>
-        <PlanHeader plan={plan} onBack={onPop} lift={up ? -60 : 0} />
-      </div>
-      {/* dark action card slides up over the image */}
+      {/* dark action card slides up over the (live) plan beneath */}
       <Sheet show={show} onExited={onExited} onDismiss={onPop} top={322} background={black} zIndex={20}>
         <div style={{ flexShrink: 0, padding: "30px 16px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <p style={{ color: text, fontSize: 19, fontWeight: 600, lineHeight: 1.35, margin: 0 }}>{lines.map((l, i) => <span key={i}>{l}{i < lines.length - 1 && <br />}</span>)}</p>
@@ -686,28 +684,31 @@ export default function App() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [sheets, setSheets] = useState([]);        // stack over the map: "farm" | "plan" | "action"
-  const [exiting, setExiting] = useState(false);    // false | "top" (pop one) | "all" (dismiss whole stack)
+  const [exitCount, setExitCount] = useState(0);    // how many top sheets are animating out
   const [selPlan, setSelPlan] = useState(PLANS[0]);
   const [selAction, setSelAction] = useState(ACTIONS[0]);
   const [coach, setCoach] = useState(true);
 
   const push = name => setSheets(s => [...s, name]);
-  const pop = () => { if (sheets.length) setExiting(true); };        // back one level
-  const onExited = () => { setSheets(s => s.slice(0, -1)); setExiting(false); };
+  const pop = () => { if (sheets.length) setExitCount(1); };                      // back one level
+  const popToName = name => { const idx = sheets.lastIndexOf(name); if (idx >= 0 && idx < sheets.length - 1) setExitCount(sheets.length - 1 - idx); };
+  const onExited = i => {
+    const firstOut = sheets.length - exitCount;     // bottom-most sheet animating out
+    if (i === firstOut) { setSheets(s => s.slice(0, firstOut)); setExitCount(0); }
+  };
 
   const openFarm = () => push("farm");
   const openPlan = p => { setSelPlan(p); push("plan"); };
-  const openActionFromFarm = a => { setSelPlan(PLANS.find(p => p.plot === a.plot) || PLANS[0]); setSelAction(a); push("action"); };
+  const openActionFromFarm = a => { setSelPlan(PLANS.find(p => p.plot === a.plot) || PLANS[0]); setSelAction(a); setSheets(s => [...s, "plan", "action"]); };
   const openActionFromPlan = a => { setSelAction(a); push("action"); };
 
   if (onboard)
     return (
       <Frame>
-        <Onboarding step={step} setStep={setStep} answers={answers} setAnswers={setAnswers} onDone={() => setOnboard(false)} />
+        <Onboarding step={step} setStep={setStep} answers={answers} setAnswers={setAnswers} onDone={() => { setSheets(["farm"]); setOnboard(false); }} />
       </Frame>
     );
 
-  const topIdx = sheets.length - 1;
   return (
     <Frame>
       <div style={{ position: "absolute", inset: 0, background: "#141719", zIndex: 0 }} />
@@ -715,12 +716,12 @@ export default function App() {
         <HomeMap onExpand={openFarm} coach={coach} onCloseCoach={() => setCoach(false)} />
       </div>
       {sheets.map((name, i) => {
-        const show = !(exiting && i === topIdx);
+        const show = i < sheets.length - exitCount;     // top `exitCount` sheets animate out
         const z = 10 + i * 10;
-        const shared = { key: name + i, z, show, onExited, onPop: pop };
+        const shared = { key: name + i, z, show, onExited: () => onExited(i), onPop: pop };
         if (name === "farm") return <FarmSheet {...shared} onAction={openActionFromFarm} onPlan={openPlan} />;
-        if (name === "plan") return <PlanDetail {...shared} plan={selPlan} onAction={openActionFromPlan} />;
-        if (name === "action") return <ActionDetail {...shared} plan={selPlan} action={selAction} onResolve={pop} />;
+        if (name === "plan") return <PlanDetail {...shared} plan={selPlan} onAction={openActionFromPlan} lift={sheets[i + 1] === "action" && exitCount === 0 ? -60 : 0} />;
+        if (name === "action") return <ActionDetail {...shared} action={selAction} onResolve={pop} onBackToFarm={() => popToName("farm")} />;
         return null;
       })}
     </Frame>
