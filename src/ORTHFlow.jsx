@@ -647,8 +647,8 @@ function ActionDetail({ z, show, onExited, action, onPop, onResolve, onBackToFar
     <div style={{ position: "absolute", inset: 0, zIndex: z }}>
       {/* the real plan layer shows through above the card; tap it to dismiss the action */}
       <Pressable noHaptic onClick={onPop} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 322, zIndex: 5, cursor: "pointer" }} />
-      {/* top-left arrow skips the plan and goes straight back to the farm (large hit target) */}
-      <Pressable onClick={onBackToFarm} style={{ position: "absolute", top: 20, left: 4, zIndex: 10, padding: 10, cursor: "pointer" }}>
+      {/* arrow overlays the plan's chevron (y≈158) and goes straight back to the farm */}
+      <Pressable onClick={onBackToFarm} style={{ position: "absolute", top: 148, left: 4, zIndex: 10, padding: 10, cursor: "pointer" }}>
         <Ico paths={I.chevL} size={24} color={ink50} />
       </Pressable>
       <TopNav />
