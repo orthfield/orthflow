@@ -52,7 +52,6 @@ const PLANS = [
 const PLOTS = [
   { name: "Plot M", sub: "Northwest", size: "9.58 ha", crop: "Carmel Almonds", locked: true, progress: 88, shape: "14,22 56,14 91,55 64,93 20,78 9,46" },
   { name: "Plot V", sub: "South", size: "9.58 ha", crop: "Carmel Almonds", locked: false, progress: 100, shape: "33,14 67,14 73,86 27,86", rot: 45 },
-  { name: "Plot Z", sub: "East", size: "6.12 ha", crop: "Nonpareil Almonds", locked: true, progress: 42, shape: "12,34 88,29 88,71 12,66", rot: -45 },
   { name: "Plot N", sub: "Riverside", size: "4.30 ha", crop: "Butte Almonds", locked: true, progress: 18, shape: "18,14 79,11 72,44 71,90 26,84 10,52" },
 ];
 // plots positioned on the map (px in a 402x874 frame); shapes reuse the real PLOTS geometry
@@ -548,6 +547,10 @@ function FarmSheet({ z, show, onExited, onPop, onAction, onPlan }) {
             <span style={VIEWALL}>View all</span>
           </div>
           <div style={{ padding: "0 16px" }}>{PLOTS.map((p, i) => <PlotRow key={i} p={p} />)}</div>
+          <Pressable style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18, padding: "56px 16px 64px", margin: "0 16px", cursor: "pointer" }}>
+            <Ico paths={I.plus} size={40} color={ter} />
+            <span style={{ color: ter, fontSize: 27, fontWeight: 600, letterSpacing: -0.5 }}>Mark your next plot</span>
+          </Pressable>
         </div>
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "90px 16px 24px", background: BOTTOM_GRAD }}>
           <InputBar ph="Ask about your farm..." />
