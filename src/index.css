@@ -1,13 +1,31 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ===== theme tokens — dark (default). Light mode is the [data-theme=light] block below. ===== */
+:root {
+  --ink: #0c0f13; --ink900: #141719; --ink850: #191c1f; --inkUp: #1e2226;
+  --ink700: #2e3337; --ink600: #404549; --ink500: #585d62; --ink400: #757a7f;
+  --ink300: #979b9f; --ink200: #bcbfc3; --ink100: #dcdfe2; --ink50: #f0f2f4;
+  --black: #000000; --white: #ffffff;
+  --surface-rgb: 12, 15, 19;   /* gradient/scrim fade color = the sheet surface */
+  --plot-fill: rgba(8, 9, 13, 0.5); --plot-stroke: rgba(255, 255, 255, 0.7);   /* plot shapes on the map */
+}
+[data-theme="light"] {
+  --ink: #f5f4f3; --ink900: #e8e7e5; --ink850: #dedcda; --inkUp: #d4d2cf;
+  --ink700: #bebbb8; --ink600: #9e9a94; --ink500: #7d7871; --ink400: #6d675f;
+  --ink300: #5d564d; --ink200: #46413a; --ink100: #2f2b26; --ink50: #201d19;
+  --black: #ffffff; --white: #000000;
+  --surface-rgb: 245, 244, 243;
+  --plot-fill: rgba(212, 210, 207, 0.5); --plot-stroke: rgba(158, 154, 148, 0.9);   /* lighter stone shapes on the light map */
+}
+
 html, body, #root {
   height: 100%;
-  background: #0c0f13;
+  background: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-::placeholder { color: #757a7f; opacity: 1; }
+::placeholder { color: var(--ink400); opacity: 1; }
 
 @keyframes orthIn  { from { transform: translateY(100%) } to { transform: translateY(0) } }
 @keyframes orthOut { from { transform: translateY(0) } to { transform: translateY(100%) } }

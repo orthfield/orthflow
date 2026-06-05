@@ -1,25 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   Menu, Bell, Cloud, NavArrowRight, NavArrowLeft, NavArrowDown, Plus,
   Attachment, Microphone, EditPencil, ArrowUpRight, Check, Xmark, Expand,
   Eye, Droplet, WateringSoil, Label, LabelSolid,
 } from "iconoir-react";
 
-/* ===================== tokens ===================== */
-const ink = "#0c0f13", ink900 = "#141719", ink850 = "#191c1f", inkUp = "#1e2226", ink700 = "#2e3337",
-  ink600 = "#404549", ink500 = "#585d62", ink400 = "#757a7f", ink300 = "#979b9f",
-  ink200 = "#bcbfc3", ink100 = "#dcdfe2", ink50 = "#f0f2f4";
-const black = "#000000", white = "#ffffff";
+/* ===================== tokens (resolve from CSS vars → themeable; see index.css) ===================== */
+const ink = "var(--ink)", ink900 = "var(--ink900)", ink850 = "var(--ink850)", inkUp = "var(--inkUp)", ink700 = "var(--ink700)",
+  ink600 = "var(--ink600)", ink500 = "var(--ink500)", ink400 = "var(--ink400)", ink300 = "var(--ink300)",
+  ink200 = "var(--ink200)", ink100 = "var(--ink100)", ink50 = "var(--ink50)";
+const black = "var(--black)", white = "var(--white)";
 const text = ink50, sec = ink400, ter = ink600;
 const hyper = "#7733aa";
-const BOTTOM_GRAD = "linear-gradient(0deg, rgba(12,15,19,0.9) 0%, rgba(12,15,19,0.888) 8.1%, rgba(12,15,19,0.856) 15.5%, rgba(12,15,19,0.806) 22.5%, rgba(12,15,19,0.743) 29%, rgba(12,15,19,0.667) 35.3%, rgba(12,15,19,0.583) 41.2%, rgba(12,15,19,0.495) 47.1%, rgba(12,15,19,0.405) 52.9%, rgba(12,15,19,0.317) 58.8%, rgba(12,15,19,0.233) 64.7%, rgba(12,15,19,0.158) 70.1%, rgba(12,15,19,0.094) 76.5%, rgba(12,15,19,0.044) 84.5%, rgba(12,15,19,0.012) 91.9%, rgba(12,15,19,0) 100%)";
-// smooth eased fade from the image into the dark sheet (top → bottom)
-const HEADER_GRAD = "linear-gradient(180deg, rgba(12,15,19,0) 0%, rgba(12,15,19,0.3) 20%, rgba(12,15,19,0.5) 40%, rgba(12,15,19,0.7) 60%, rgba(12,15,19,0.9) 80%, rgba(12,15,19,1) 100%)";
+const SURF = "var(--surface-rgb)";   // sheet-surface rgb for fades/scrims
+const ThemeCtx = createContext({ theme: "dark", toggle: () => {}, openSettings: () => {} });
+const BOTTOM_GRAD = `linear-gradient(0deg, rgba(${SURF},0.9) 0%, rgba(${SURF},0.888) 8.1%, rgba(${SURF},0.856) 15.5%, rgba(${SURF},0.806) 22.5%, rgba(${SURF},0.743) 29%, rgba(${SURF},0.667) 35.3%, rgba(${SURF},0.583) 41.2%, rgba(${SURF},0.495) 47.1%, rgba(${SURF},0.405) 52.9%, rgba(${SURF},0.317) 58.8%, rgba(${SURF},0.233) 64.7%, rgba(${SURF},0.158) 70.1%, rgba(${SURF},0.094) 76.5%, rgba(${SURF},0.044) 84.5%, rgba(${SURF},0.012) 91.9%, rgba(${SURF},0) 100%)`;
+// smooth eased fade from the image into the sheet surface (top → bottom)
+const HEADER_GRAD = `linear-gradient(180deg, rgba(${SURF},0) 0%, rgba(${SURF},0.3) 20%, rgba(${SURF},0.5) 40%, rgba(${SURF},0.7) 60%, rgba(${SURF},0.9) 80%, rgba(${SURF},1) 100%)`;
 const BR = { blue: "#3D8EF0", green: "#00cd61", gold: "#efb768", red: "#f32b44" };
-const STATUS = {
-  Scheduled: { bg: BR.blue, fg: ink50 },
-  Overdue: { bg: BR.red, fg: white },
-  Done: { bg: BR.green, fg: white },
+const STATUS = {   // pill text stays light in both themes (it sits on the colored accent bg)
+  Scheduled: { bg: BR.blue, fg: "#f0f2f4" },
+  Overdue: { bg: BR.red, fg: "#ffffff" },
+  Done: { bg: BR.green, fg: "#ffffff" },
 };
 
 /* ===================== icons (Iconoir) ===================== */
@@ -62,13 +64,13 @@ const MAP_PLOTS = [
 ];
 
 /* ===================== shared bits ===================== */
-function PlotGlyph({ shape, rot, size = 15, dots = false, sw = 1.4 }) {
+function PlotGlyph({ shape, rot, size = 15, dots = false, sw = 1.4, stroke = white }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{ display: "block", flexShrink: 0 }}>
       {dots && [15, 38, 62, 85].map(y => [15, 38, 62, 85].map(x => (
         <circle key={`${x}-${y}`} cx={x} cy={y} r="2" fill={ink700} />
       )))}
-      <polygon points={shape} fill="none" stroke={white} strokeWidth={sw} vectorEffect="non-scaling-stroke"
+      <polygon points={shape} fill="none" stroke={stroke} strokeWidth={sw} vectorEffect="non-scaling-stroke"
         strokeLinejoin="miter" transform={rot ? `rotate(${rot} 50 50)` : undefined} />
     </svg>
   );
@@ -156,7 +158,7 @@ function Sheet({ top = 128, background = ink, radius = 30, zIndex = 20, show = t
   const grabEl = (
     <div onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end}
       style={{ position: "absolute", top: 0, left: 0, right: 0, height: 30, zIndex: 9, display: "flex", justifyContent: "center", paddingTop: 12, cursor: "grab", touchAction: "none" }}>
-      <div style={{ width: 38, height: 5, borderRadius: 3, background: grabber === "light" ? ink400 : ink700 }} />
+      <div style={{ width: 38, height: 5, borderRadius: 3, background: grabber === "light" ? "#757a7f" : ink700 }} />
     </div>
   );
 
@@ -169,9 +171,10 @@ function Sheet({ top = 128, background = ink, radius = 30, zIndex = 20, show = t
   );
 }
 function TopNav() {
+  const { openSettings } = useContext(ThemeCtx);
   return (
     <div style={{ position: "absolute", top: 58, left: 0, right: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
-      <Pressable style={circleBtn}><Ico paths={I.menu} size={20} color={ink50} /></Pressable>
+      <Pressable onClick={openSettings} style={circleBtn}><Ico paths={I.menu} size={20} color={ink50} /></Pressable>
       <Pressable style={{ background: black, borderRadius: 22, padding: "9px 11px 9px 15px", display: "flex", alignItems: "center", gap: 6 }}>
         <Ico paths={I.cloud} size={16} color={ink200} />
         <span style={{ color: ink50, fontSize: 14, fontWeight: 600 }}>31.2°C</span>
@@ -180,7 +183,7 @@ function TopNav() {
       <div style={{ position: "relative" }}>
         <Pressable style={circleBtn}><Ico paths={I.bell} size={20} color={ink50} /></Pressable>
         <div style={{ position: "absolute", top: -2, right: -2, background: BR.red, borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <span style={{ color: white, fontSize: 10, fontWeight: 600 }}>2</span>
+          <span style={{ color: "#fff", fontSize: 10, fontWeight: 600 }}>2</span>
         </div>
       </div>
     </div>
@@ -199,7 +202,7 @@ function Dots({ cur, total, onWhite }) {
   return (
     <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
       {Array.from({ length: total }).map((_, i) => (
-        <div key={i} style={{ width: i < cur ? 16 : 8, height: 7, borderRadius: 4, background: i < cur ? BR.green : (onWhite ? ink100 : ink700) }} />
+        <div key={i} style={{ width: i < cur ? 16 : 8, height: 7, borderRadius: 4, background: i < cur ? BR.green : (onWhite ? "#dcdfe2" : ink700) }} />
       ))}
     </div>
   );
@@ -261,7 +264,7 @@ function DrawPlot({ points, setPoints }) {
   };
   const pts = points.map(p => p.join(",")).join(" ");
   return (
-    <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", height: 340, background: "#141719" }}>
+    <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", height: 340, background: ink900 }}>
       <svg onClick={add} viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", cursor: "crosshair" }}>
         {points.length > 1 && <polyline points={pts} fill={points.length > 2 ? "rgba(255,255,255,0.12)" : "none"} stroke={white} strokeWidth="0.6" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />}
         {points.length > 2 && <line x1={points[points.length - 1][0]} y1={points[points.length - 1][1]} x2={points[0][0]} y2={points[0][1]} stroke={white} strokeWidth="0.6" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" />}
@@ -342,17 +345,18 @@ function MapPlots() {
           const S = p.size;
           return (
             <g key={i} transform={`translate(${p.cx - S / 2} ${p.cy - S / 2}) scale(${S / 100})`}>
-              <polygon points={plot.shape} fill="rgba(8,9,13,0.5)" stroke="rgba(255,255,255,0.7)" strokeWidth="1.4" strokeLinejoin="round" vectorEffect="non-scaling-stroke" transform={plot.rot ? `rotate(${plot.rot} 50 50)` : undefined} />
+              <polygon points={plot.shape} style={{ fill: "var(--plot-fill)", stroke: "var(--plot-stroke)" }} strokeWidth="1.4" strokeLinejoin="round" vectorEffect="non-scaling-stroke" transform={plot.rot ? `rotate(${plot.rot} 50 50)` : undefined} />
             </g>
           );
         })}
       </svg>
       {MAP_PLOTS.map((p, i) => (
         <div key={i} style={{ position: "absolute", left: p.cx, top: p.cy, transform: "translate(-50%,-50%)", zIndex: 6 }}>
-          <div style={{ position: "relative", background: black, borderRadius: 999, padding: "8px 16px" }}>
-            <span style={{ color: white, fontSize: 13, fontWeight: 600 }}>{p.name}</span>
+          {/* map pins stay dark with light text in both themes (they sit on the map) */}
+          <div style={{ position: "relative", background: "#201d19", borderRadius: 999, padding: "8px 16px" }}>
+            <span style={{ color: "#f0f2f4", fontSize: 13, fontWeight: 600 }}>{p.name}</span>
             <div style={{ position: "absolute", top: -8, right: -8, background: BR.blue, borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ color: ink50, fontSize: 11, fontWeight: 600 }}>{p.count}</span>
+              <span style={{ color: "#f0f2f4", fontSize: 11, fontWeight: 600 }}>{p.count}</span>
             </div>
           </div>
         </div>
@@ -386,14 +390,14 @@ function HomeMap({ onExpand, coach, onCloseCoach }) {
   }, []);
   return (
     <>
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(12,15,19,0.35), transparent 22%, transparent 70%, rgba(12,15,19,0.55))", zIndex: 4 }} />
+      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, rgba(${SURF},0.35), transparent 22%, transparent 70%, rgba(${SURF},0.55))`, zIndex: 4 }} />
       <MapPlots />
       <TopNav />
       {coach && showCoach && <CoachCallout onClose={onCloseCoach} />}
       <div style={{ position: "absolute", left: 16, right: 16, bottom: 108, zIndex: 30 }}>
         <InputBar ph="Ask about your farm..." bg={ink} />
       </div>
-      <Pressable onClick={onExpand} scale={0.99} style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 35, background: "linear-gradient(180deg, #000000, #0c0f13)", borderRadius: 30, padding: "14px 22px 26px", cursor: "pointer" }}>
+      <Pressable onClick={onExpand} scale={0.99} style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 35, background: `linear-gradient(180deg, ${black}, ${ink})`, borderRadius: 30, padding: "14px 22px 26px", cursor: "pointer" }}>
         <div style={{ display: "flex", justifyContent: "center", paddingBottom: 14 }}>
           <div style={{ width: 38, height: 5, borderRadius: 3, background: ink700 }} />
         </div>
@@ -403,7 +407,7 @@ function HomeMap({ onExpand, coach, onCloseCoach }) {
             <Ico paths={I.chevD} size={20} color={sec} />
           </div>
           <div style={{ background: BR.blue, borderRadius: 999, padding: "5px 12px", display: "flex", alignItems: "center" }}>
-            <span style={{ color: ink50, fontSize: 11.5, fontWeight: 600 }}>4 upcoming actions</span>
+            <span style={{ color: "#f0f2f4", fontSize: 11.5, fontWeight: 600 }}>4 upcoming actions</span>
           </div>
         </div>
       </Pressable>
@@ -429,19 +433,20 @@ function PlanCard({ p, onClick }) {
       <div style={{ height: 152, position: "relative", background: ink900, overflow: "hidden" }}>
         <img src={p.img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
         <div style={{ position: "absolute", top: 11, right: 11, background: BR.blue, borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <span style={{ color: white, fontSize: 11, fontWeight: 600 }}>{p.cur}</span>
+          <span style={{ color: "#fff", fontSize: 11, fontWeight: 600 }}>{p.cur}</span>
         </div>
       </div>
-      <div style={{ background: white, padding: "15px 16px 17px" }}>
-        <p style={{ color: ink900, fontSize: 18, fontWeight: 600, marginBottom: 13, letterSpacing: -0.3 }}>{p.title}</p>
+      {/* info panel is a fixed light surface in both themes (not flipped) */}
+      <div style={{ background: "#ffffff", padding: "15px 16px 17px" }}>
+        <p style={{ color: "#141719", fontSize: 18, fontWeight: 600, marginBottom: 13, letterSpacing: -0.3 }}>{p.title}</p>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-            <span style={{ color: ink400, fontSize: 13 }}>{p.cur}/{p.total}</span>
+            <span style={{ color: "#757a7f", fontSize: 13 }}>{p.cur}/{p.total}</span>
             <Dots cur={p.cur} total={p.total} onWhite />
           </div>
-          <div style={{ background: black, borderRadius: 20, padding: "6px 12px", display: "flex", alignItems: "center", gap: 7 }}>
-            {(() => { const ps = PLOTS.find(x => x.name === p.plot); return ps && <PlotGlyph shape={ps.shape} rot={ps.rot} size={15} />; })()}
-            <span style={{ color: white, fontSize: 13, fontWeight: 500 }}>{p.plot}</span>
+          <div style={{ background: "#000000", borderRadius: 20, padding: "6px 12px", display: "flex", alignItems: "center", gap: 7 }}>
+            {(() => { const ps = PLOTS.find(x => x.name === p.plot); return ps && <PlotGlyph shape={ps.shape} rot={ps.rot} size={15} stroke="#ffffff" />; })()}
+            <span style={{ color: "#ffffff", fontSize: 13, fontWeight: 500 }}>{p.plot}</span>
           </div>
         </div>
       </div>
@@ -461,8 +466,8 @@ function FileCard({ label, count, img, add }) {
       <img src={img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.55) 100%)" }} />
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 15 }}>
-        <span style={{ color: ink50, fontSize: 14, fontWeight: 600 }}>{label}</span>
-        <span style={{ color: ink50, fontSize: 28, fontWeight: 600, lineHeight: 1 }}>{count}</span>
+        <span style={{ color: "#f0f2f4", fontSize: 14, fontWeight: 600 }}>{label}</span>
+        <span style={{ color: "#f0f2f4", fontSize: 28, fontWeight: 600, lineHeight: 1 }}>{count}</span>
       </div>
     </Pressable>
   );
@@ -631,7 +636,8 @@ function PlanHeader({ plan, onBack, compact, lift = 0 }) {
         <img src={plan.img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
         <div style={{ position: "absolute", inset: 0, background: HEADER_GRAD }} />
         <Pressable onClick={onBack} style={{ position: "absolute", top: 30, left: 14, cursor: "pointer", zIndex: 10 }}>
-          <Ico paths={I.chevL} size={24} color={ink50} />
+          {/* sits on the dark top of the image — stays light in both themes */}
+          <Ico paths={I.chevL} size={24} color="#f0f2f4" />
         </Pressable>
       </div>
       <div style={{ padding: "0 16px 18px", marginTop: compact ? -44 : -52, position: "relative", transform: `translateY(${lift}px)`, transition: `transform .44s ${SPRING}` }}>
@@ -731,7 +737,7 @@ function ActionDetail({ z, show, onExited, action, onPop, onResolve, onBackToFar
           <div style={{ display: "flex", gap: 10 }}>
             <Pressable onClick={onResolve} style={{ ...btn, background: ink900, color: text }}>Skip</Pressable>
             <Pressable onClick={onResolve} style={{ ...btn, background: ink900, color: text }}>Later</Pressable>
-            <Pressable onClick={onResolve} style={{ ...btn, flex: 1.2, background: BR.green, color: white }}>Done</Pressable>
+            <Pressable onClick={onResolve} style={{ ...btn, flex: 1.2, background: BR.green, color: "#fff" }}>Done</Pressable>
           </div>
         </div>
       </Sheet>
@@ -739,9 +745,41 @@ function ActionDetail({ z, show, onExited, action, onPop, onResolve, onBackToFar
   );
 }
 
+/* ===================== settings + theme toggle (reversible: remove Settings + theme state) ===================== */
+function Switch({ on, onClick }) {
+  return (
+    <div onClick={onClick} style={{ width: 50, height: 30, borderRadius: 999, background: on ? BR.green : inkUp, padding: 3, cursor: "pointer", flexShrink: 0, transition: "background .22s", WebkitTapHighlightColor: "transparent" }}>
+      <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#fff", transform: on ? "translateX(20px)" : "translateX(0)", transition: `transform .22s ${SPRING}` }} />
+    </div>
+  );
+}
+function Settings({ theme, onToggle, onClose }) {
+  return (
+    <div style={{ position: "absolute", inset: 0, zIndex: 80 }}>
+      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: `rgba(${SURF},0.5)`, animation: "orthRise .25s ease-out both" }} />
+      <div style={{ position: "absolute", left: 16, right: 16, top: 120, background: ink900, borderRadius: 26, padding: "6px 20px 14px", animation: "orthRise .3s ease-out both" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0 14px" }}>
+          <span style={{ color: text, fontSize: 19, fontWeight: 600, letterSpacing: -0.3 }}>Settings</span>
+          <Pressable onClick={onClose} style={{ ...circleBtn, width: 34, height: 34, background: inkUp }}><Ico paths={I.x} size={18} color={sec} /></Pressable>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0 6px" }}>
+          <div>
+            <p style={{ color: text, fontSize: 16, fontWeight: 500, margin: 0 }}>Light mode</p>
+            <p style={{ color: sec, fontSize: 13, margin: "3px 0 0" }}>Switch the whole app to a light theme.</p>
+          </div>
+          <Switch on={theme === "light"} onClick={onToggle} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ===================== app / router ===================== */
 export default function App() {
   const [onboard, setOnboard] = useState(true);
+  const [theme, setTheme] = useState("dark");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  useEffect(() => { document.documentElement.setAttribute("data-theme", theme); }, [theme]);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [sheets, setSheets] = useState([]);        // stack over the map: "farm" | "plan" | "action"
@@ -764,29 +802,39 @@ export default function App() {
   const openActionFromFarm = a => { setSelPlan(PLANS.find(p => p.plot === a.plot) || PLANS[0]); setSelAction(a); setSheets(s => [...s, "plan", "action"]); };
   const openActionFromPlan = a => { setSelAction(a); push("action"); };
 
+  const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
+  const ctx = { theme, toggle: toggleTheme, openSettings: () => setSettingsOpen(true) };
+  const settingsOverlay = settingsOpen && <Settings theme={theme} onToggle={toggleTheme} onClose={() => setSettingsOpen(false)} />;
+
   if (onboard)
     return (
-      <Frame>
-        <Onboarding step={step} setStep={setStep} answers={answers} setAnswers={setAnswers} onDone={() => { setSheets(["farm"]); setOnboard(false); }} />
-      </Frame>
+      <ThemeCtx.Provider value={ctx}>
+        <Frame>
+          <Onboarding step={step} setStep={setStep} answers={answers} setAnswers={setAnswers} onDone={() => { setSheets(["farm"]); setOnboard(false); }} />
+          {settingsOverlay}
+        </Frame>
+      </ThemeCtx.Provider>
     );
 
   return (
-    <Frame>
-      <div style={{ position: "absolute", inset: 0, background: "#141719", zIndex: 0 }} />
-      <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
-        <HomeMap onExpand={openFarm} coach={coach} onCloseCoach={() => setCoach(false)} />
-      </div>
-      {sheets.map((name, i) => {
-        const show = i < sheets.length - exitCount;     // top `exitCount` sheets animate out
-        const z = 10 + i * 10;
-        const key = name + i;
-        const shared = { z, show, onExited: () => onExited(i), onPop: pop };
-        if (name === "farm") return <FarmSheet key={key} {...shared} onAction={openActionFromFarm} onPlan={openPlan} tour={showTour && sheets.length === 1} onTourDone={() => setShowTour(false)} />;
-        if (name === "plan") return <PlanDetail key={key} {...shared} plan={selPlan} onAction={openActionFromPlan} lift={sheets[i + 1] === "action" && exitCount === 0 ? -60 : 0} />;
-        if (name === "action") return <ActionDetail key={key} {...shared} action={selAction} onResolve={pop} onBackToFarm={() => popToName("farm")} />;
-        return null;
-      })}
-    </Frame>
+    <ThemeCtx.Provider value={ctx}>
+      <Frame>
+        <div style={{ position: "absolute", inset: 0, background: ink900, zIndex: 0 }} />
+        <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
+          <HomeMap onExpand={openFarm} coach={coach} onCloseCoach={() => setCoach(false)} />
+        </div>
+        {sheets.map((name, i) => {
+          const show = i < sheets.length - exitCount;     // top `exitCount` sheets animate out
+          const z = 10 + i * 10;
+          const key = name + i;
+          const shared = { z, show, onExited: () => onExited(i), onPop: pop };
+          if (name === "farm") return <FarmSheet key={key} {...shared} onAction={openActionFromFarm} onPlan={openPlan} tour={showTour && sheets.length === 1} onTourDone={() => setShowTour(false)} />;
+          if (name === "plan") return <PlanDetail key={key} {...shared} plan={selPlan} onAction={openActionFromPlan} lift={sheets[i + 1] === "action" && exitCount === 0 ? -60 : 0} />;
+          if (name === "action") return <ActionDetail key={key} {...shared} action={selAction} onResolve={pop} onBackToFarm={() => popToName("farm")} />;
+          return null;
+        })}
+        {settingsOverlay}
+      </Frame>
+    </ThemeCtx.Provider>
   );
 }
