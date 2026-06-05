@@ -8,6 +8,7 @@
   --black: #000000; --white: #ffffff;
   --surface-rgb: 12, 15, 19;   /* gradient/scrim fade color = the sheet surface */
   --plot-fill: rgba(8, 9, 13, 0.5); --plot-stroke: rgba(255, 255, 255, 0.7);   /* plot shapes on the map */
+  --map-pin: #191c1f;   /* dark map pin — ink850 in dark, stone in light */
 }
 [data-theme="light"] {
   --ink: #f5f4f3; --ink900: #e8e7e5; --ink850: #dedcda; --inkUp: #d4d2cf;
@@ -16,6 +17,7 @@
   --black: #ffffff; --white: #000000;
   --surface-rgb: 245, 244, 243;
   --plot-fill: rgba(212, 210, 207, 0.5); --plot-stroke: rgba(158, 154, 148, 0.9);   /* lighter stone shapes on the light map */
+  --map-pin: #201d19;   /* stone-950 dark pin on the light map */
 }
 
 html, body, #root {

@@ -352,8 +352,8 @@ function MapPlots() {
       </svg>
       {MAP_PLOTS.map((p, i) => (
         <div key={i} style={{ position: "absolute", left: p.cx, top: p.cy, transform: "translate(-50%,-50%)", zIndex: 6 }}>
-          {/* map pins stay dark with light text in both themes (they sit on the map) */}
-          <div style={{ position: "relative", background: "#201d19", borderRadius: 999, padding: "8px 16px" }}>
+          {/* map pins stay dark with light text in both themes — ink shade in dark, stone in light */}
+          <div style={{ position: "relative", background: "var(--map-pin)", borderRadius: 999, padding: "8px 16px" }}>
             <span style={{ color: "#f0f2f4", fontSize: 13, fontWeight: 600 }}>{p.name}</span>
             <div style={{ position: "absolute", top: -8, right: -8, background: BR.blue, borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ color: "#f0f2f4", fontSize: 11, fontWeight: 600 }}>{p.count}</span>
@@ -720,7 +720,7 @@ function ActionDetail({ z, show, onExited, action, onPop, onResolve, onBackToFar
       <Pressable onClick={onBackToFarm} style={{ position: "absolute", top: 144, left: 0, width: 56, height: 52, zIndex: 10, cursor: "pointer" }} />
       <TopNav />
       {/* dark action card slides up over the (live) plan beneath */}
-      <Sheet show={show} onExited={onExited} onDismiss={onPop} top={322} background={black} zIndex={20}>
+      <Sheet show={show} onExited={onExited} onDismiss={onPop} top={322} background={black} zIndex={20} grabber="light">
         <div style={{ flexShrink: 0, padding: "30px 16px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <p style={{ color: text, fontSize: 19, fontWeight: 600, lineHeight: 1.35, margin: 0 }}>{lines.map((l, i) => <span key={i}>{l}{i < lines.length - 1 && <br />}</span>)}</p>
           <Ico paths={actionIcon(action.cat)} size={22} color={sec} />
