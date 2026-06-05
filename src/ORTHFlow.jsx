@@ -708,12 +708,10 @@ function ActionDetail({ z, show, onExited, action, onPop, onResolve, onBackToFar
   const btn = { flex: 1, borderRadius: 999, padding: "16px", textAlign: "center", fontSize: 16, fontWeight: 600, cursor: "pointer" };
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: z }}>
-      {/* the real plan layer shows through above the card; tap it to dismiss the action */}
+      {/* the real plan layer (incl. its back arrow) shows through above the card; tap to dismiss the action */}
       <Pressable noHaptic onClick={onPop} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 322, zIndex: 5, cursor: "pointer" }} />
-      {/* arrow overlays the plan's chevron (y≈158) and goes straight back to the farm */}
-      <Pressable onClick={onBackToFarm} style={{ position: "absolute", top: 148, left: 4, zIndex: 10, padding: 10, cursor: "pointer" }}>
-        <Ico paths={I.chevL} size={24} color={ink50} />
-      </Pressable>
+      {/* invisible hit zone over the plan's visible chevron — routes that tap straight to the farm (no second icon) */}
+      <Pressable onClick={onBackToFarm} style={{ position: "absolute", top: 144, left: 0, width: 56, height: 52, zIndex: 10, cursor: "pointer" }} />
       <TopNav />
       {/* dark action card slides up over the (live) plan beneath */}
       <Sheet show={show} onExited={onExited} onDismiss={onPop} top={322} background={black} zIndex={20}>
